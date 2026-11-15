@@ -91,7 +91,7 @@
           <option value="">🔥 Heatmap / couches : aucune</option>
           <optgroup label="Fréquentation et sentiers">
             <option value="gps">🔥 Traces GPS (OpenStreetMap)</option>
-            <option value="gpsoff">🔥 Traces GPS hors route (calculée)</option>
+            <option value="gpsoff">🔥 HeatMap Générée OSM</option>
             <option value="hiking">🥾 Sentiers de randonnée balisés</option>
             <option value="mtb">🚵 Itinéraires VTT balisés</option>
             <option value="cycling">🚴 Itinéraires vélo balisés</option>
@@ -111,6 +111,8 @@
           <div>Vitesse <input id="goVmin" type="number" min="0" max="200"> à <input id="goVmax" type="number" min="1" max="300"> km/h</div>
           <div><label><input id="goHr" type="checkbox"> Hors route seulement</label> (à plus de <input id="goDist" type="number" min="5" max="200"> m d’une route goudronnée)</div>
           <div><button id="goLoad" type="button">Charger la heatmap ici</button></div>
+          <div><button id="goSave" type="button" title="Enregistre tout ce qui est en mémoire dans un fichier .json">💾 Enregistrer</button> <button id="goOpen" type="button" title="Ajoute une heatmap enregistrée (.json)">📂 Importer</button> <button id="goClear" type="button">🗑️ Vider</button><input type="file" id="goFile" accept=".json,application/json" hidden></div>
+          <div id="goCount" class="gomsg"></div>
           <div id="goMsg" class="gomsg">Zoome sur ta zone (zoom 12 ou plus), puis clique.</div>
         </div>
         <label class="radlab" title="Cercle d’ouverture (bleu, pointillé) et cercle de validation (violet) autour de chaque waypoint"><input type="checkbox" id="radChk"> ◎ Rayons des waypoints <span class="radkey"><i class="ro"></i> ouverture <i class="rc"></i> validation</span></label>

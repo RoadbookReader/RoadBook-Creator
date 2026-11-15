@@ -116,6 +116,9 @@ $('#heatLvlTxt').addEventListener('dblclick', () => { if (curHeat) { delete heat
 $('#heatSel').addEventListener('change', e => setHeat(e.target.value));
 $('#goVmin').value = gpsOffOpt.vmin; $('#goVmax').value = gpsOffOpt.vmax; $('#goHr').checked = !!gpsOffOpt.hr; $('#goDist').value = gpsOffOpt.dist;
 $('#goLoad').addEventListener('click', gpsOffLoad);
+$('#goSave').addEventListener('click', gpsOffSave); $('#goClear').addEventListener('click', gpsOffClear);
+$('#goOpen').addEventListener('click', () => $('#goFile').click());
+$('#goFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) gpsOffImport(f); });
 try { setHeat(localStorage.getItem('rbgen.heat') || ''); } catch (_) {}
 $('#baseLvl').addEventListener('input', e => { baseLevel[curLayerKey] = +e.target.value; try { localStorage.setItem('rbgen.baseLevel', JSON.stringify(baseLevel)); } catch (_) {} applyBaseLevel(); });
 $('#baseLvlTxt').addEventListener('dblclick', () => { delete baseLevel[curLayerKey]; applyBaseLevel(); });
