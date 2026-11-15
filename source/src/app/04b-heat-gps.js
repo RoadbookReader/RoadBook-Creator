@@ -181,3 +181,37 @@ function gpsOffClear() {
   gpsOffMem = { zones: [], pts: [] }; gpsOffRefresh(); gpsOffDB.del();
   $('#goMsg').textContent = gpsOffT('Mémoire vidée.', 'Memory cleared.');
 }
+
+/* Chemins non cartographiés : passages où la trace quitte les chemins connus (réseau G, mêmes critères que les notes « Hors piste »),
+   comparés à la heatmap gardée en mémoire. fréquenté = des traces d'autres usagers à moins de 30 m sur au moins 40 % du passage. */
+const gpsGapGroup = L.layerGroup(); gpsOffLayer.addLayer(gpsGapGroup);
+function gpsOffGaps() {
+  const box = $('#goGaps'); gpsGapGroup.clearLayers(); box.innerHTML = '';
+  if (!T || !G || !G.ways || !G.ways.length) { box.textContent = gpsOffT('Génère d’abord le roadbook : il faut connaître les chemins pour trouver ceux qui manquent.', 'Generate the roadbook first: the known paths are needed to find the missing ones.'); return; }
+  const STEP = 10, off = [];
+  for (let s = 0; s <= T.L; s += STEP) off.push(!nearestWaySeg(G, pointAt(s), 18));
+  const raw = []; let a = -1;
+  for (let i = 0; i <= off.length; i++) { if (i < off.length && off[i]) { if (a < 0) a = i; } else if (a >= 0) { raw.push([a, i - 1]); a = -1; } }
+  const runs = []; for (const r of raw) { const l = runs[runs.length - 1]; if (l && r[0] - l[1] <= 10) l[1] = r[1]; else runs.push([r[0], r[1]]); }
+  const list = runs.map(r => [r[0] * STEP, r[1] * STEP]).filter(r => r[1] - r[0] >= 60);
+  if (!list.length) { box.textContent = gpsOffT('Aucun passage hors des chemins connus : la trace suit des chemins cartographiés.', 'No part of the track leaves the known paths: it follows mapped paths.'); return; }
+  const grid = new Map(), pts = gpsOffMem.pts;
+  for (let i = 0; i < pts.length; i += 2) { const q = fwd(pts[i], pts[i + 1]), k = Math.floor(q[0] / 50) + ',' + Math.floor(q[1] / 50); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(q); }
+  const near = q => { const cx = Math.floor(q[0] / 50), cy = Math.floor(q[1] / 50); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const c = grid.get((cx + i) + ',' + (cy + j)); if (c) for (const h of c) if (Math.hypot(h[0] - q[0], h[1] - q[1]) <= 30) return true; } return false; };
+  const fmtKm = m => (m / 1000).toFixed(1).replace('.', gpsOffT(',', '.'));
+  const COL = { busy: ['#d4007a', null, '━'], none: ['#ff8a00', '8 7', '╍'], unl: ['#888', '2 8', '┅'] };
+  box.innerHTML = '<b>' + gpsOffT(`${list.length} passage(s) hors des chemins connus :`, `${list.length} part(s) outside the known paths:`) + '</b>';
+  list.forEach(([r0, r1], n) => {
+    const xy = []; for (let s = r0; s <= r1; s += STEP) xy.push(pointAt(s));
+    const mid = inv(...pointAt((r0 + r1) / 2)), loaded = gpsOffMem.zones.some(z => gpsOffIn(z, mid[0], mid[1]));
+    const cover = xy.filter(near).length / xy.length;
+    const st = !loaded ? 'unl' : cover >= 0.4 ? 'busy' : 'none';
+    const txt = st === 'busy' ? gpsOffT(`fréquenté (${Math.round(cover * 100)} % du passage couvert), chemin probablement non cartographié`, `used (${Math.round(cover * 100)}% of the part covered), probably an unmapped path`)
+      : st === 'none' ? gpsOffT('aucune trace trouvée', 'no tracks found') : gpsOffT('zone non chargée (clique « Charger autour de ma trace »)', 'area not loaded (click “Load around my track”)');
+    const line = L.polyline(xy.map(q => inv(...q)), { color: COL[st][0], weight: 6, opacity: .9, dashArray: COL[st][1] }).addTo(gpsGapGroup);
+    const len = r1 - r0, d = document.createElement('div'); d.className = 'gap'; d.style.cursor = 'pointer';
+    d.innerHTML = `<span style="color:${COL[st][0]}">${COL[st][2]}</span> ${n + 1}. km ${fmtKm(r0)} → ${fmtKm(r1)} (${len >= 1000 ? fmtKm(len) + ' km' : Math.round(len) + ' m'}) : ${st === 'busy' ? '<b>' + txt.split(' (')[0] + '</b> (' + txt.split(' (').slice(1).join(' (') : txt}`;
+    d.onclick = () => map.fitBounds(line.getBounds(), { maxZoom: 16, padding: [60, 60] });
+    box.appendChild(d);
+  });
+}

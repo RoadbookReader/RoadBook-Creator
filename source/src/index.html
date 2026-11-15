@@ -111,8 +111,10 @@
           <div>Vitesse <input id="goVmin" type="number" min="0" max="200"> à <input id="goVmax" type="number" min="1" max="300"> km/h</div>
           <div><label><input id="goHr" type="checkbox"> Hors route seulement</label> (à plus de <input id="goDist" type="number" min="5" max="200"> m d’une route goudronnée)</div>
           <div><button id="goLoad" type="button">Charger la heatmap ici</button> <button id="goTrace" type="button">🛣️ Charger autour de ma trace</button></div>
+          <div><button id="goGapBtn" type="button">🔎 Chemins non cartographiés</button></div>
           <div>Largeur du couloir : <input id="goWidth" type="number" min="1" max="10" step="1"> km de chaque côté</div>
           <div><button id="goSave" type="button" title="Enregistre tout ce qui est en mémoire dans un fichier .json">💾 Enregistrer</button> <button id="goOpen" type="button" title="Ajoute une heatmap enregistrée (.json)">📂 Importer</button> <button id="goClear" type="button">🗑️ Vider</button><input type="file" id="goFile" accept=".json,application/json" hidden></div>
+          <div id="goGaps" class="gomsg" style="opacity:1"></div>
           <div id="goCount" class="gomsg" title="Gardé automatiquement dans ce navigateur, sur cet appareil seulement. Si tu vides les données du navigateur, la heatmap est perdue : utilise 💾 Enregistrer pour en garder une copie (fichier .json)."></div>
           <div class="gomsg">⚠️ Gardé dans ce navigateur seulement : pense à 💾 Enregistrer.</div>
           <div id="goMsg" class="gomsg">Zoome sur ta zone (zoom 12 ou plus), puis clique.</div>

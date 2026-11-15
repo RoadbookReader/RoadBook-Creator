@@ -161,4 +161,5 @@ Object.assign(I18N_EN, {
 "🛣️ Charger autour de ma trace": "🛣️ Load around my track",
 "Largeur du couloir :": "Corridor width:",
 "km de chaque côté": "km on each side",
+"🔎 Chemins non cartographiés": "🔎 Unmapped paths",
 });
