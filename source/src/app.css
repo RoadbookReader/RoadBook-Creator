@@ -53,9 +53,9 @@ main{flex:1;display:flex;min-height:0}
 .rbr>.k{position:relative;overflow:hidden;border-right:2px solid #000;min-width:0}
 .rbr>.k3{border-right:0}
 .k1 .tot{position:absolute;top:1.8cqw;left:0;right:0;text-align:center;font-family:var(--cond);font-weight:800;font-size:7.4cqw;line-height:1;letter-spacing:-.1cqw}
-.k1 .bl{position:absolute;left:1.3cqw;bottom:1.3cqw;display:flex;align-items:flex-end;gap:.5cqw}
-.k1 .par{border:.3cqw solid #000;background:#fff;padding:.25cqw .8cqw;font-family:var(--cond);font-weight:700;font-size:4.3cqw;line-height:1.1}
-.k1 .arr{width:2.4cqw;height:13cqw;display:block}
+.k1 .bl{position:absolute;left:0;bottom:0;display:flex;align-items:flex-end;gap:1.2cqw}
+.k1 .par{border:0;border-top:.55cqw solid #000;border-right:.55cqw solid #000;background:#fff;padding:.5cqw 1.8cqw .4cqw 1.4cqw;font-family:var(--cond);font-weight:700;font-size:5.6cqw;line-height:1.05}
+.k1 .arr{width:2.4cqw;height:13cqw;display:block;margin-bottom:1.3cqw}
 .k1 .br{position:absolute;right:0;bottom:0;display:flex;flex-direction:column;align-items:flex-end}
 .k1 .syms{position:absolute;right:1cqw;bottom:4.6cqw;display:flex;align-items:center;gap:.4cqw}
 .k1 .syms.hi{bottom:7.6cqw}
