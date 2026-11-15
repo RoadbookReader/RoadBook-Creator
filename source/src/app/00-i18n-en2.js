@@ -144,4 +144,11 @@ Object.assign(I18N_EN, {
 "⛰️ Point de vue": "⛰️ Viewpoint",
 "sans note": "without note",
 "Pas de note": "No note",
+"🔥 Traces GPS hors route (calculée)": "🔥 GPS tracks, off-road only (computed)",
+"Hors route seulement": "Off-road only",
+"(à plus de": "(more than",
+"m d’une route goudronnée)": "m from a paved road)",
+"Charger la heatmap ici": "Load the heatmap here",
+"Zoome sur ta zone (zoom 12 ou plus), puis clique.": "Zoom in on your area (zoom 12 or more), then click.",
+"à": "to",
 });

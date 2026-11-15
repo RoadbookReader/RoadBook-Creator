@@ -368,3 +368,5 @@ body.dragNote .leaflet-tooltip{display:none}
 .dropdown .mhd .car{font-size:12px;opacity:.6}
 .dropdown .mbody{display:none;padding-left:8px;border-left:3px solid #e5dfd3;margin:0 0 4px 10px}
 .dropdown .mbody.open{display:block}
+
+.gpsoff{font-size:12px;line-height:1.5;margin-top:4px;max-width:360px}.gpsoff input[type=number]{width:52px}.gpsoff button{font-size:12px;padding:3px 8px;cursor:pointer}.gpsoff .gomsg{margin-top:2px;opacity:.85}

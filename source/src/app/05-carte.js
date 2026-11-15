@@ -90,10 +90,11 @@ const HEAT = {
   gps: L.tileLayer('https://gps.tile.openstreetmap.org/lines/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 19, zIndex: 5, opacity: 0.85, attribution: 'Traces GPS © contributeurs OpenStreetMap' }),
   hiking: L.tileLayer('https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png', { maxNativeZoom: 18, maxZoom: 19, zIndex: 5, opacity: 0.85, attribution: 'Sentiers © Waymarked Trails' }),
   mtb: L.tileLayer('https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png', { maxNativeZoom: 18, maxZoom: 19, zIndex: 5, opacity: 0.85, attribution: 'VTT © Waymarked Trails' }),
-  cycling: L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', { maxNativeZoom: 18, maxZoom: 19, zIndex: 5, opacity: 0.85, attribution: 'Vélo © Waymarked Trails' })
+  cycling: L.tileLayer('https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png', { maxNativeZoom: 18, maxZoom: 19, zIndex: 5, opacity: 0.85, attribution: 'Vélo © Waymarked Trails' }),
+  gpsoff: gpsOffLayer      // traces GPS OSM hors route, calculées à la demande (04b-heat-gps.js)
 };
 let curHeat = '';
-const HEAT_BASE = { gps: .85, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, lidar: 1, ombrage: 1, prsf: 1 };
+const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, lidar: 1, ombrage: 1, prsf: 1 };
 let heatLevel = {}; try { heatLevel = JSON.parse(localStorage.getItem('rbgen.heatLevel') || '{}') || {}; } catch (_) {}
 /* Curseur d'intensité : 10 % à 100 % = atténuation (transparence) */
 function applyHeatLevel() {
@@ -107,11 +108,14 @@ function setHeat(key) {
   if (curHeat && HEAT[curHeat]) map.removeLayer(HEAT[curHeat]);
   curHeat = key; if (key) HEAT[key].addTo(map);
   $('#heatSel').value = key; try { localStorage.setItem('rbgen.heat', key); } catch (_) {}
+  $('#gpsOffBox').style.display = key === 'gpsoff' ? '' : 'none';
   applyHeatLevel();
 }
 $('#heatLvl').addEventListener('input', e => { if (!curHeat) return; heatLevel[curHeat] = +e.target.value; try { localStorage.setItem('rbgen.heatLevel', JSON.stringify(heatLevel)); } catch (_) {} applyHeatLevel(); });
 $('#heatLvlTxt').addEventListener('dblclick', () => { if (curHeat) { delete heatLevel[curHeat]; applyHeatLevel(); } });
 $('#heatSel').addEventListener('change', e => setHeat(e.target.value));
+$('#goVmin').value = gpsOffOpt.vmin; $('#goVmax').value = gpsOffOpt.vmax; $('#goHr').checked = !!gpsOffOpt.hr; $('#goDist').value = gpsOffOpt.dist;
+$('#goLoad').addEventListener('click', gpsOffLoad);
 try { setHeat(localStorage.getItem('rbgen.heat') || ''); } catch (_) {}
 $('#baseLvl').addEventListener('input', e => { baseLevel[curLayerKey] = +e.target.value; try { localStorage.setItem('rbgen.baseLevel', JSON.stringify(baseLevel)); } catch (_) {} applyBaseLevel(); });
 $('#baseLvlTxt').addEventListener('dblclick', () => { delete baseLevel[curLayerKey]; applyBaseLevel(); });
