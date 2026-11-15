@@ -156,4 +156,6 @@ Object.assign(I18N_EN, {
 "Charger la heatmap ici": "Load the heatmap here",
 "Zoome sur ta zone (zoom 12 ou plus), puis clique.": "Zoom in on your area (zoom 12 or more), then click.",
 "à": "to",
+"Gardé automatiquement dans ce navigateur, sur cet appareil seulement. Si tu vides les données du navigateur, la heatmap est perdue : utilise 💾 Enregistrer pour en garder une copie (fichier .json).": "Kept automatically in this browser, on this device only. If you clear the browser data, the heatmap is lost: use 💾 Save to keep a copy (.json file).",
+"⚠️ Gardé dans ce navigateur seulement : pense à 💾 Enregistrer.": "⚠️ Kept in this browser only: remember to 💾 Save.",
 });

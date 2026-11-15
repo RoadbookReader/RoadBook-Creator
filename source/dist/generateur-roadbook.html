@@ -1048,7 +1048,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261115.1656</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261115.1703</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1089,7 +1089,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261115.1656</div>
+          <div class="ver">Version v0.261115.1703</div>
         </div>
       </div>
     </div>
@@ -1145,7 +1145,8 @@ body.dragNote .leaflet-tooltip{display:none}
           <div><label><input id="goHr" type="checkbox"> Hors route seulement</label> (à plus de <input id="goDist" type="number" min="5" max="200"> m d’une route goudronnée)</div>
           <div><button id="goLoad" type="button">Charger la heatmap ici</button></div>
           <div><button id="goSave" type="button" title="Enregistre tout ce qui est en mémoire dans un fichier .json">💾 Enregistrer</button> <button id="goOpen" type="button" title="Ajoute une heatmap enregistrée (.json)">📂 Importer</button> <button id="goClear" type="button">🗑️ Vider</button><input type="file" id="goFile" accept=".json,application/json" hidden></div>
-          <div id="goCount" class="gomsg"></div>
+          <div id="goCount" class="gomsg" title="Gardé automatiquement dans ce navigateur, sur cet appareil seulement. Si tu vides les données du navigateur, la heatmap est perdue : utilise 💾 Enregistrer pour en garder une copie (fichier .json)."></div>
+          <div class="gomsg">⚠️ Gardé dans ce navigateur seulement : pense à 💾 Enregistrer.</div>
           <div id="goMsg" class="gomsg">Zoome sur ta zone (zoom 12 ou plus), puis clique.</div>
         </div>
         <label class="radlab" title="Cercle d’ouverture (bleu, pointillé) et cercle de validation (violet) autour de chaque waypoint"><input type="checkbox" id="radChk"> ◎ Rayons des waypoints <span class="radkey"><i class="ro"></i> ouverture <i class="rc"></i> validation</span></label>
@@ -2873,6 +2874,8 @@ Object.assign(I18N_EN, {
 "Charger la heatmap ici": "Load the heatmap here",
 "Zoome sur ta zone (zoom 12 ou plus), puis clique.": "Zoom in on your area (zoom 12 or more), then click.",
 "à": "to",
+"Gardé automatiquement dans ce navigateur, sur cet appareil seulement. Si tu vides les données du navigateur, la heatmap est perdue : utilise 💾 Enregistrer pour en garder une copie (fichier .json).": "Kept automatically in this browser, on this device only. If you clear the browser data, the heatmap is lost: use 💾 Save to keep a copy (.json file).",
+"⚠️ Gardé dans ce navigateur seulement : pense à 💾 Enregistrer.": "⚠️ Kept in this browser only: remember to 💾 Save.",
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
 // Le texte des notes du roadbook (cases .k3) n'est PAS traduit ici : sa langue sera un réglage séparé (étape 2).
