@@ -115,7 +115,7 @@ $('#heatLvl').addEventListener('input', e => { if (!curHeat) return; heatLevel[c
 $('#heatLvlTxt').addEventListener('dblclick', () => { if (curHeat) { delete heatLevel[curHeat]; applyHeatLevel(); } });
 $('#heatSel').addEventListener('change', e => setHeat(e.target.value));
 $('#goVmin').value = gpsOffOpt.vmin; $('#goVmax').value = gpsOffOpt.vmax; $('#goHr').checked = !!gpsOffOpt.hr; $('#goDist').value = gpsOffOpt.dist;
-$('#goLoad').addEventListener('click', gpsOffLoad);
+$('#goLoad').addEventListener('click', gpsOffLoad); $('#goWidth').value = gpsOffOpt.width; $('#goTrace').addEventListener('click', gpsOffTrace);
 $('#goSave').addEventListener('click', gpsOffSave); $('#goClear').addEventListener('click', gpsOffClear);
 $('#goOpen').addEventListener('click', () => $('#goFile').click());
 $('#goFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) gpsOffImport(f); });

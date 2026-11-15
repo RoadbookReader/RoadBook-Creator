@@ -3,7 +3,7 @@
    d'une route goudronnée (Overpass, index en cases de 50 m) → Leaflet.heat. Calculé à la demande pour la zone visible (max 0,25 deg²). */
 const GPSOFF_ROAD = /^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service)(_link)?$/;
 const GPSOFF_UNPAVED = /^(unpaved|gravel|fine_gravel|dirt|ground|earth|grass|sand|mud|compacted|pebblestone)$/;
-let gpsOffOpt = { vmin: 3, vmax: 50, hr: true, dist: 25 };
+let gpsOffOpt = { vmin: 3, vmax: 50, hr: true, dist: 25, width: 3 };
 try { Object.assign(gpsOffOpt, JSON.parse(localStorage.getItem('rbgen.gpsOff') || '{}')); } catch (_) {}
 const gpsOffT = (fr, en) => (I18N.lang === 'en' ? en : fr);
 const gpsOffLayer = L.layerGroup();
@@ -88,34 +88,78 @@ function gpsOffIndex(roads, lat0) {          // renvoie nearRoad(lat, lon, maxD)
     return false;
   };
 }
-async function gpsOffLoad() {
-  const msg = $('#goMsg'), run = ++gpsOffRun, cancelled = () => run !== gpsOffRun || curHeat !== 'gpsoff';
+async function gpsOffProcess(w, s, e, n, cancelled, progress) {      // points hors route d'une zone : {pts, total, afterSpeed, capped}
+  let pts = await gpsOffPoints(w, s, e, n, cancelled, progress);
+  const total = pts.length, capped = pts.capped;
+  pts = pts.filter(p => p[2] === null || (p[2] >= gpsOffOpt.vmin && p[2] <= gpsOffOpt.vmax));
+  const afterSpeed = pts.length;
+  if (gpsOffOpt.hr && pts.length) {
+    const mg = 0.002;      // marge : une route juste hors de la zone compte aussi
+    const near = gpsOffIndex(await gpsOffRoads(w - mg, s - mg, e + mg, n + mg, cancelled), (s + n) / 2);
+    pts = pts.filter(p => !near(p[0], p[1], gpsOffOpt.dist));
+  }
+  return { pts, total, afterSpeed, capped };
+}
+function gpsOffReadOpt() {
   const num = (id, d, lo, hi) => { const v = parseFloat($(id).value); return clamp(isFinite(v) ? v : d, lo, hi); };
-  gpsOffOpt = { vmin: num('#goVmin', 3, 0, 200), vmax: num('#goVmax', 50, 1, 300), hr: $('#goHr').checked, dist: num('#goDist', 25, 5, 200) };
+  gpsOffOpt = { vmin: num('#goVmin', 3, 0, 200), vmax: num('#goVmax', 50, 1, 300), hr: $('#goHr').checked, dist: num('#goDist', 25, 5, 200), width: num('#goWidth', 3, 1, 10) };
   if (gpsOffOpt.vmax < gpsOffOpt.vmin) gpsOffOpt.vmax = gpsOffOpt.vmin;
   try { localStorage.setItem('rbgen.gpsOff', JSON.stringify(gpsOffOpt)); } catch (_) {}
+}
+const gpsOffFlat = pts => pts.flatMap(p => [+p[0].toFixed(5), +p[1].toFixed(5)]);
+async function gpsOffLoad() {      // zone visible
+  const msg = $('#goMsg'), run = ++gpsOffRun, cancelled = () => run !== gpsOffRun || curHeat !== 'gpsoff';
+  gpsOffReadOpt();
   const b = map.getBounds(), w = b.getWest(), s = b.getSouth(), e = b.getEast(), n = b.getNorth();
   if ((e - w) * (n - s) > 0.25) { msg.textContent = gpsOffT('Zone trop grande : zoome davantage (maxi 0,25 deg², zoom 12 ou plus).', 'Area too large: zoom in (max 0.25 deg², zoom 12 or more).'); return; }
-  $('#goLoad').disabled = true;
+  $('#goLoad').disabled = $('#goTrace').disabled = true;
   try {
     msg.textContent = gpsOffT('Chargement des traces…', 'Loading tracks…');
-    let pts = await gpsOffPoints(w, s, e, n, cancelled, c => { msg.textContent = c + gpsOffT(' points…', ' points…'); });
-    const total = pts.length, capped = pts.capped;
-    pts = pts.filter(p => p[2] === null || (p[2] >= gpsOffOpt.vmin && p[2] <= gpsOffOpt.vmax));
-    const afterSpeed = pts.length;
-    if (gpsOffOpt.hr && pts.length) {
-      msg.textContent = gpsOffT('Chargement des routes…', 'Loading roads…');
-      const near = gpsOffIndex(await gpsOffRoads(w, s, e, n, cancelled), (s + n) / 2);
-      pts = pts.filter(p => !near(p[0], p[1], gpsOffOpt.dist));
-    }
+    const r = await gpsOffProcess(w, s, e, n, cancelled, c => { msg.textContent = c + gpsOffT(' points…', ' points…'); });
     if (cancelled()) return;
-    gpsOffMerge([[w, s, e, n]], pts.flatMap(p => [+p[0].toFixed(5), +p[1].toFixed(5)]));
-    msg.textContent = gpsOffT(`${pts.length} points gardés dans cette zone (sur ${total} ; ${afterSpeed} après le filtre vitesse).`, `${pts.length} points kept in this area (out of ${total}; ${afterSpeed} after the speed filter).`) + (capped ? gpsOffT(' Limite de 50 000 points atteinte : zoome pour tout voir.', ' 50,000-point limit reached: zoom in to see everything.') : '');
+    gpsOffMerge([[w, s, e, n]], gpsOffFlat(r.pts));
+    msg.textContent = gpsOffT(`${r.pts.length} points gardés dans cette zone (sur ${r.total} ; ${r.afterSpeed} après le filtre vitesse).`, `${r.pts.length} points kept in this area (out of ${r.total}; ${r.afterSpeed} after the speed filter).`) + (r.capped ? gpsOffT(' Limite de 50 000 points atteinte : zoome pour tout voir.', ' 50,000-point limit reached: zoom in to see everything.') : '');
   } catch (err) {
     if (!cancelled()) msg.textContent = gpsOffT('Erreur : ', 'Error: ') + (err && err.message || err) + (location.protocol === 'file:' ? gpsOffT(' (fichier local : utilise plutôt la Web App)', ' (local file: use the Web App instead)') : '');
-  } finally { $('#goLoad').disabled = false; }
+  } finally { $('#goLoad').disabled = $('#goTrace').disabled = false; }
 }
-
+/* Couloir autour de la trace : carrés de 0,1° ≤ largeur choisie de chaque côté, chargés un par un (pause d'1 s pour ménager l'API OSM) */
+function gpsOffTiles(ll, widthKm) {
+  const T = 0.1, seen = new Map(), dLat = widthKm / 111;
+  let last = null;
+  for (let i = 0; i < ll.length; i++) {
+    const p = ll[i]; if (last && Math.abs(p[0] - last[0]) < 0.0015 && Math.abs(p[1] - last[1]) < 0.0015 && i < ll.length - 1) continue; last = p;
+    const dLon = dLat / Math.max(0.2, Math.cos(p[0] * Math.PI / 180));
+    for (let x = Math.floor((p[1] - dLon) / T); x <= Math.floor((p[1] + dLon) / T); x++) for (let y = Math.floor((p[0] - dLat) / T); y <= Math.floor((p[0] + dLat) / T); y++) { const k = x + ',' + y; if (!seen.has(k)) seen.set(k, [x * T, y * T, (x + 1) * T, (y + 1) * T]); }
+  }
+  return [...seen.values()];
+}
+async function gpsOffTrace() {
+  const msg = $('#goMsg'), btn = $('#goTrace');
+  if (btn.dataset.run) { gpsOffRun++; return; }      // 2e clic = arrêter
+  if (!S.ll || S.ll.length < 2) { msg.textContent = gpsOffT('Charge d’abord une trace.', 'Load a track first.'); return; }
+  gpsOffReadOpt();
+  const tiles = gpsOffTiles(S.ll, gpsOffOpt.width), MAXT = 80;
+  if (tiles.length > MAXT) { msg.textContent = gpsOffT(`Trop de zones (${tiles.length}, maxi ${MAXT}) : réduis la largeur du couloir ou charge la trace en plusieurs fois.`, `Too many areas (${tiles.length}, max ${MAXT}): reduce the corridor width or load the track in several steps.`); return; }
+  const run = ++gpsOffRun, cancelled = () => run !== gpsOffRun || curHeat !== 'gpsoff', label = btn.textContent;
+  btn.dataset.run = '1'; btn.textContent = gpsOffT('⏹ Arrêter', '⏹ Stop'); $('#goLoad').disabled = true;
+  let kept = 0, err = 0, errRow = 0, done = 0;
+  try {
+    for (const [w, s, e, n] of tiles) {
+      if (cancelled()) break;
+      const head = gpsOffT(`Zone ${done + 1} sur ${tiles.length}… `, `Area ${done + 1} of ${tiles.length}… `);
+      msg.textContent = head;
+      try {
+        const r = await gpsOffProcess(w, s, e, n, cancelled, c => { msg.textContent = head + c + gpsOffT(' points', ' points'); });
+        if (cancelled()) break;
+        gpsOffMerge([[w, s, e, n]], gpsOffFlat(r.pts)); kept += r.pts.length; errRow = 0;
+      } catch (ex) { if (cancelled()) break; err++; if (++errRow >= 3) { msg.textContent = gpsOffT('Arrêt : 3 erreurs de suite (', 'Stopped: 3 errors in a row (') + (ex && ex.message || ex) + ').'; return; } }
+      done++;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    msg.textContent = (done < tiles.length ? gpsOffT('Arrêté : ', 'Stopped: ') : gpsOffT('Terminé : ', 'Done: ')) + gpsOffT(`${done} zones sur ${tiles.length}, ${kept} points gardés`, `${done} of ${tiles.length} areas, ${kept} points kept`) + (err ? gpsOffT(` (${err} zone(s) en erreur : relance pour les compléter).`, ` (${err} area(s) failed: run again to complete them).`) : '.');
+  } finally { delete btn.dataset.run; btn.textContent = label; $('#goLoad').disabled = false; }
+}
 function gpsOffSave() {
   if (!gpsOffMem.pts.length) { $('#goMsg').textContent = gpsOffT('Rien à enregistrer : charge d’abord une zone.', 'Nothing to save: load an area first.'); return; }
   const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
