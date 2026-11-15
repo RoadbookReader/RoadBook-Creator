@@ -1048,7 +1048,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261115.2221</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261115.2241</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1089,7 +1089,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261115.2221</div>
+          <div class="ver">Version v0.261115.2241</div>
         </div>
       </div>
     </div>
@@ -1144,8 +1144,10 @@ body.dragNote .leaflet-tooltip{display:none}
           <div>Vitesse <input id="goVmin" type="number" min="0" max="200"> à <input id="goVmax" type="number" min="1" max="300"> km/h</div>
           <div><label><input id="goHr" type="checkbox"> Hors route seulement</label> (à plus de <input id="goDist" type="number" min="5" max="200"> m d’une route goudronnée)</div>
           <div><button id="goLoad" type="button">Charger la heatmap ici</button> <button id="goTrace" type="button">🛣️ Charger autour de ma trace</button></div>
+          <div><button id="goGapBtn" type="button">🔎 Chemins non cartographiés</button></div>
           <div>Largeur du couloir : <input id="goWidth" type="number" min="1" max="10" step="1"> km de chaque côté</div>
           <div><button id="goSave" type="button" title="Enregistre tout ce qui est en mémoire dans un fichier .json">💾 Enregistrer</button> <button id="goOpen" type="button" title="Ajoute une heatmap enregistrée (.json)">📂 Importer</button> <button id="goClear" type="button">🗑️ Vider</button><input type="file" id="goFile" accept=".json,application/json" hidden></div>
+          <div id="goGaps" class="gomsg" style="opacity:1"></div>
           <div id="goCount" class="gomsg" title="Gardé automatiquement dans ce navigateur, sur cet appareil seulement. Si tu vides les données du navigateur, la heatmap est perdue : utilise 💾 Enregistrer pour en garder une copie (fichier .json)."></div>
           <div class="gomsg">⚠️ Gardé dans ce navigateur seulement : pense à 💾 Enregistrer.</div>
           <div id="goMsg" class="gomsg">Zoome sur ta zone (zoom 12 ou plus), puis clique.</div>
@@ -2880,6 +2882,7 @@ Object.assign(I18N_EN, {
 "🛣️ Charger autour de ma trace": "🛣️ Load around my track",
 "Largeur du couloir :": "Corridor width:",
 "km de chaque côté": "km on each side",
+"🔎 Chemins non cartographiés": "🔎 Unmapped paths",
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
 // Le texte des notes du roadbook (cases .k3) n'est PAS traduit ici : sa langue sera un réglage séparé (étape 2).
@@ -3438,6 +3441,40 @@ function gpsOffClear() {
   gpsOffMem = { zones: [], pts: [] }; gpsOffRefresh(); gpsOffDB.del();
   $('#goMsg').textContent = gpsOffT('Mémoire vidée.', 'Memory cleared.');
 }
+
+/* Chemins non cartographiés : passages où la trace quitte les chemins connus (réseau G, mêmes critères que les notes « Hors piste »),
+   comparés à la heatmap gardée en mémoire. fréquenté = des traces d'autres usagers à moins de 30 m sur au moins 40 % du passage. */
+const gpsGapGroup = L.layerGroup(); gpsOffLayer.addLayer(gpsGapGroup);
+function gpsOffGaps() {
+  const box = $('#goGaps'); gpsGapGroup.clearLayers(); box.innerHTML = '';
+  if (!T || !G || !G.ways || !G.ways.length) { box.textContent = gpsOffT('Génère d’abord le roadbook : il faut connaître les chemins pour trouver ceux qui manquent.', 'Generate the roadbook first: the known paths are needed to find the missing ones.'); return; }
+  const STEP = 10, off = [];
+  for (let s = 0; s <= T.L; s += STEP) off.push(!nearestWaySeg(G, pointAt(s), 18));
+  const raw = []; let a = -1;
+  for (let i = 0; i <= off.length; i++) { if (i < off.length && off[i]) { if (a < 0) a = i; } else if (a >= 0) { raw.push([a, i - 1]); a = -1; } }
+  const runs = []; for (const r of raw) { const l = runs[runs.length - 1]; if (l && r[0] - l[1] <= 10) l[1] = r[1]; else runs.push([r[0], r[1]]); }
+  const list = runs.map(r => [r[0] * STEP, r[1] * STEP]).filter(r => r[1] - r[0] >= 60);
+  if (!list.length) { box.textContent = gpsOffT('Aucun passage hors des chemins connus : la trace suit des chemins cartographiés.', 'No part of the track leaves the known paths: it follows mapped paths.'); return; }
+  const grid = new Map(), pts = gpsOffMem.pts;
+  for (let i = 0; i < pts.length; i += 2) { const q = fwd(pts[i], pts[i + 1]), k = Math.floor(q[0] / 50) + ',' + Math.floor(q[1] / 50); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(q); }
+  const near = q => { const cx = Math.floor(q[0] / 50), cy = Math.floor(q[1] / 50); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const c = grid.get((cx + i) + ',' + (cy + j)); if (c) for (const h of c) if (Math.hypot(h[0] - q[0], h[1] - q[1]) <= 30) return true; } return false; };
+  const fmtKm = m => (m / 1000).toFixed(1).replace('.', gpsOffT(',', '.'));
+  const COL = { busy: ['#d4007a', null, '━'], none: ['#00c000', '8 7', '╍'], unl: ['#888', '2 8', '┅'] };
+  box.innerHTML = '<b>' + gpsOffT(`${list.length} passage(s) hors des chemins connus :`, `${list.length} part(s) outside the known paths:`) + '</b>';
+  list.forEach(([r0, r1], n) => {
+    const xy = []; for (let s = r0; s <= r1; s += STEP) xy.push(pointAt(s));
+    const mid = inv(...pointAt((r0 + r1) / 2)), loaded = gpsOffMem.zones.some(z => gpsOffIn(z, mid[0], mid[1]));
+    const cover = xy.filter(near).length / xy.length;
+    const st = !loaded ? 'unl' : cover >= 0.4 ? 'busy' : 'none';
+    const txt = st === 'busy' ? gpsOffT(`fréquenté (${Math.round(cover * 100)} % du passage couvert), chemin probablement non cartographié`, `used (${Math.round(cover * 100)}% of the part covered), probably an unmapped path`)
+      : st === 'none' ? gpsOffT('aucune trace trouvée', 'no tracks found') : gpsOffT('zone non chargée (clique « Charger autour de ma trace »)', 'area not loaded (click “Load around my track”)');
+    const line = L.polyline(xy.map(q => inv(...q)), { color: COL[st][0], weight: 6, opacity: .9, dashArray: COL[st][1] }).addTo(gpsGapGroup);
+    const len = r1 - r0, d = document.createElement('div'); d.className = 'gap'; d.style.cursor = 'pointer';
+    d.innerHTML = `<span style="color:${COL[st][0]}">${COL[st][2]}</span> ${n + 1}. km ${fmtKm(r0)} → ${fmtKm(r1)} (${len >= 1000 ? fmtKm(len) + ' km' : Math.round(len) + ' m'}) : ${st === 'busy' ? '<b>' + txt.split(' (')[0] + '</b> (' + txt.split(' (').slice(1).join(' (') : txt}`;
+    d.onclick = () => map.fitBounds(line.getBounds(), { maxZoom: 16, padding: [60, 60] });
+    box.appendChild(d);
+  });
+}
 /* ============================================================
    5. Carte
    ============================================================ */
@@ -3555,7 +3592,7 @@ $('#heatLvl').addEventListener('input', e => { if (!curHeat) return; heatLevel[c
 $('#heatLvlTxt').addEventListener('dblclick', () => { if (curHeat) { delete heatLevel[curHeat]; applyHeatLevel(); } });
 $('#heatSel').addEventListener('change', e => setHeat(e.target.value));
 $('#goVmin').value = gpsOffOpt.vmin; $('#goVmax').value = gpsOffOpt.vmax; $('#goHr').checked = !!gpsOffOpt.hr; $('#goDist').value = gpsOffOpt.dist;
-$('#goLoad').addEventListener('click', gpsOffLoad); $('#goWidth').value = gpsOffOpt.width; $('#goTrace').addEventListener('click', gpsOffTrace);
+$('#goLoad').addEventListener('click', gpsOffLoad); $('#goWidth').value = gpsOffOpt.width; $('#goTrace').addEventListener('click', gpsOffTrace); $('#goGapBtn').addEventListener('click', gpsOffGaps);
 $('#goSave').addEventListener('click', gpsOffSave); $('#goClear').addEventListener('click', gpsOffClear);
 $('#goOpen').addEventListener('click', () => $('#goFile').click());
 $('#goFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) gpsOffImport(f); });

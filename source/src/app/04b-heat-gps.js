@@ -199,7 +199,7 @@ function gpsOffGaps() {
   for (let i = 0; i < pts.length; i += 2) { const q = fwd(pts[i], pts[i + 1]), k = Math.floor(q[0] / 50) + ',' + Math.floor(q[1] / 50); let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(q); }
   const near = q => { const cx = Math.floor(q[0] / 50), cy = Math.floor(q[1] / 50); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const c = grid.get((cx + i) + ',' + (cy + j)); if (c) for (const h of c) if (Math.hypot(h[0] - q[0], h[1] - q[1]) <= 30) return true; } return false; };
   const fmtKm = m => (m / 1000).toFixed(1).replace('.', gpsOffT(',', '.'));
-  const COL = { busy: ['#d4007a', null, '━'], none: ['#ff8a00', '8 7', '╍'], unl: ['#888', '2 8', '┅'] };
+  const COL = { busy: ['#d4007a', null, '━'], none: ['#00c000', '8 7', '╍'], unl: ['#888', '2 8', '┅'] };
   box.innerHTML = '<b>' + gpsOffT(`${list.length} passage(s) hors des chemins connus :`, `${list.length} part(s) outside the known paths:`) + '</b>';
   list.forEach(([r0, r1], n) => {
     const xy = []; for (let s = r0; s <= r1; s += STEP) xy.push(pointAt(s));
