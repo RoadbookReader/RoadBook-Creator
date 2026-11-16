@@ -86,7 +86,7 @@
             <option value="esritopo">🏔️ Esri Topo</option>
           </optgroup>
         </select>
-        <div><label class="heatlvl" title="Glisse vers la gauche pour atténuer le fond de carte. Double-clic sur le pourcentage : remettre à 100 %.">Intensité du fond <input type="range" id="baseLvl" min="10" max="100" step="5" value="100"> <span id="baseLvlTxt">100 %</span></label></div>
+        <div><label class="heatlvl" title="Glisse vers la gauche pour atténuer le fond de carte. Double-clic sur le pourcentage : remettre à 100 %.">Intensité du fond <input type="range" id="baseLvl" min="0" max="100" step="5" value="100"> <span id="baseLvlTxt">100 %</span></label></div>
         <select id="heatSel" aria-label="Heatmap et couches" title="Couches par-dessus le fond : où les gens passent, sentiers balisés, relief et forêts (France)">
           <option value="">🔥 Heatmap / couches : aucune</option>
           <optgroup label="Fréquentation et sentiers">
@@ -106,7 +106,7 @@
             <option value="skidder">🪵 Accessibilité forêts : débardage</option>
           </optgroup>
         </select>
-        <div id="heatLvlBox" style="display:none"><label class="heatlvl" title="Glisse vers la gauche pour atténuer la couche. Double-clic sur le pourcentage : remettre à 100 %.">Intensité <input type="range" id="heatLvl" min="10" max="100" step="5" value="100"> <span id="heatLvlTxt">100 %</span></label></div>
+        <div id="heatLvlBox" style="display:none"><label class="heatlvl" title="Glisse vers la gauche pour atténuer la couche. Double-clic sur le pourcentage : remettre à 100 %.">Intensité <input type="range" id="heatLvl" min="0" max="100" step="5" value="100"> <span id="heatLvlTxt">100 %</span></label></div>
         <div id="gpsOffBox" class="gpsoff" style="display:none">
           <div>Vitesse <input id="goVmin" type="number" min="0" max="200"> à <input id="goVmax" type="number" min="1" max="300"> km/h</div>
           <div><label><input id="goHr" type="checkbox"> Hors route seulement</label> (à plus de <input id="goDist" type="number" min="5" max="200"> m d’une route goudronnée)</div>

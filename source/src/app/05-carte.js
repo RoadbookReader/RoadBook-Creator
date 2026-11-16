@@ -28,10 +28,11 @@ function layerFor(key) {
   if (!myLayerObjs.has(c.id)) myLayerObjs.set(c.id, L.tileLayer(c.url, { maxNativeZoom: c.max || 18, maxZoom: Math.max(19, c.max || 18), attribution: esc(c.name) }));
   return myLayerObjs.get(c.id);
 }
+const lvl = x => (x == null || x === '' || !isFinite(+x) ? 100 : +x);      // 0 est une valeur valable
 let baseLevel = {}; try { baseLevel = JSON.parse(localStorage.getItem('rbgen.baseLevel') || '{}') || {}; } catch (_) {}
-/* Curseur d'intensité du fond : 10 % à 100 % (atténuation), mémorisé pour chaque fond */
+/* Curseur d'intensité du fond : 0 % à 100 % (atténuation), mémorisé pour chaque fond */
 function applyBaseLevel() {
-  const v = clamp(+baseLevel[curLayerKey] || 100, 10, 100);
+  const v = clamp(lvl(baseLevel[curLayerKey]), 0, 100);
   $('#baseLvl').value = v; $('#baseLvlTxt').textContent = v + ' %'; curLayer.setOpacity(v / 100);
 }
 function setBaseLayer(key) {
@@ -96,10 +97,10 @@ const HEAT = {
 let curHeat = '';
 const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, lidar: 1, ombrage: 1, prsf: 1 };
 let heatLevel = {}; try { heatLevel = JSON.parse(localStorage.getItem('rbgen.heatLevel') || '{}') || {}; } catch (_) {}
-/* Curseur d'intensité : 10 % à 100 % = atténuation (transparence) */
+/* Curseur d'intensité : 0 % à 100 % = atténuation (transparence) */
 function applyHeatLevel() {
   const lay = HEAT[curHeat]; if (!lay) { $('#heatLvlBox').style.display = 'none'; return; }
-  const v = clamp(+heatLevel[curHeat] || 100, 10, 100), base = HEAT_BASE[curHeat] || 1;
+  const v = clamp(lvl(heatLevel[curHeat]), 0, 100), base = HEAT_BASE[curHeat] || 1;
   $('#heatLvlBox').style.display = ''; $('#heatLvl').value = v; $('#heatLvlTxt').textContent = v + ' %';
   lay.setOpacity(Math.min(1, base * v / 100));
 }

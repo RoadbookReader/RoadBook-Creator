@@ -1048,7 +1048,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261116.1105</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261116.1234</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1089,7 +1089,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261116.1105 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261116.1234 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -1119,7 +1119,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <option value="esritopo">🏔️ Esri Topo</option>
           </optgroup>
         </select>
-        <div><label class="heatlvl" title="Glisse vers la gauche pour atténuer le fond de carte. Double-clic sur le pourcentage : remettre à 100 %.">Intensité du fond <input type="range" id="baseLvl" min="10" max="100" step="5" value="100"> <span id="baseLvlTxt">100 %</span></label></div>
+        <div><label class="heatlvl" title="Glisse vers la gauche pour atténuer le fond de carte. Double-clic sur le pourcentage : remettre à 100 %.">Intensité du fond <input type="range" id="baseLvl" min="0" max="100" step="5" value="100"> <span id="baseLvlTxt">100 %</span></label></div>
         <select id="heatSel" aria-label="Heatmap et couches" title="Couches par-dessus le fond : où les gens passent, sentiers balisés, relief et forêts (France)">
           <option value="">🔥 Heatmap / couches : aucune</option>
           <optgroup label="Fréquentation et sentiers">
@@ -1139,7 +1139,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <option value="skidder">🪵 Accessibilité forêts : débardage</option>
           </optgroup>
         </select>
-        <div id="heatLvlBox" style="display:none"><label class="heatlvl" title="Glisse vers la gauche pour atténuer la couche. Double-clic sur le pourcentage : remettre à 100 %.">Intensité <input type="range" id="heatLvl" min="10" max="100" step="5" value="100"> <span id="heatLvlTxt">100 %</span></label></div>
+        <div id="heatLvlBox" style="display:none"><label class="heatlvl" title="Glisse vers la gauche pour atténuer la couche. Double-clic sur le pourcentage : remettre à 100 %.">Intensité <input type="range" id="heatLvl" min="0" max="100" step="5" value="100"> <span id="heatLvlTxt">100 %</span></label></div>
         <div id="gpsOffBox" class="gpsoff" style="display:none">
           <div>Vitesse <input id="goVmin" type="number" min="0" max="200"> à <input id="goVmax" type="number" min="1" max="300"> km/h</div>
           <div><label><input id="goHr" type="checkbox"> Hors route seulement</label> (à plus de <input id="goDist" type="number" min="5" max="200"> m d’une route goudronnée)</div>
@@ -3523,10 +3523,11 @@ function layerFor(key) {
   if (!myLayerObjs.has(c.id)) myLayerObjs.set(c.id, L.tileLayer(c.url, { maxNativeZoom: c.max || 18, maxZoom: Math.max(19, c.max || 18), attribution: esc(c.name) }));
   return myLayerObjs.get(c.id);
 }
+const lvl = x => (x == null || x === '' || !isFinite(+x) ? 100 : +x);      // 0 est une valeur valable
 let baseLevel = {}; try { baseLevel = JSON.parse(localStorage.getItem('rbgen.baseLevel') || '{}') || {}; } catch (_) {}
-/* Curseur d'intensité du fond : 10 % à 100 % (atténuation), mémorisé pour chaque fond */
+/* Curseur d'intensité du fond : 0 % à 100 % (atténuation), mémorisé pour chaque fond */
 function applyBaseLevel() {
-  const v = clamp(+baseLevel[curLayerKey] || 100, 10, 100);
+  const v = clamp(lvl(baseLevel[curLayerKey]), 0, 100);
   $('#baseLvl').value = v; $('#baseLvlTxt').textContent = v + ' %'; curLayer.setOpacity(v / 100);
 }
 function setBaseLayer(key) {
@@ -3591,10 +3592,10 @@ const HEAT = {
 let curHeat = '';
 const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, lidar: 1, ombrage: 1, prsf: 1 };
 let heatLevel = {}; try { heatLevel = JSON.parse(localStorage.getItem('rbgen.heatLevel') || '{}') || {}; } catch (_) {}
-/* Curseur d'intensité : 10 % à 100 % = atténuation (transparence) */
+/* Curseur d'intensité : 0 % à 100 % = atténuation (transparence) */
 function applyHeatLevel() {
   const lay = HEAT[curHeat]; if (!lay) { $('#heatLvlBox').style.display = 'none'; return; }
-  const v = clamp(+heatLevel[curHeat] || 100, 10, 100), base = HEAT_BASE[curHeat] || 1;
+  const v = clamp(lvl(heatLevel[curHeat]), 0, 100), base = HEAT_BASE[curHeat] || 1;
   $('#heatLvlBox').style.display = ''; $('#heatLvl').value = v; $('#heatLvlTxt').textContent = v + ' %';
   lay.setOpacity(Math.min(1, base * v / 100));
 }
