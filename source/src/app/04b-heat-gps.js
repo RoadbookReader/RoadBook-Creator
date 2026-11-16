@@ -170,10 +170,18 @@ async function gpsOffTrace() {
     msg.textContent = (done < tiles.length ? gpsOffT('Arrêté : ', 'Stopped: ') : gpsOffT('Terminé : ', 'Done: ')) + gpsOffT(`${done} zones sur ${tiles.length}, ${kept} points gardés`, `${done} of ${tiles.length} areas, ${kept} points kept`) + (err ? gpsOffT(` (${err} zone(s) en erreur : relance pour les compléter).`, ` (${err} area(s) failed: run again to complete them).`) : '.');
   } finally { delete btn.dataset.run; btn.textContent = label; $('#goLoad').disabled = false; }
 }
-function gpsOffSave() {
+async function gpsOffSave() {
   if (!gpsOffMem.pts.length) { $('#goMsg').textContent = gpsOffT('Rien à enregistrer : charge d’abord une zone.', 'Nothing to save: load an area first.'); return; }
-  const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-  download('heatmap-osm-' + stamp + '.json', JSON.stringify({ type: 'rb-heatmap-osm', v: 1, date: d.toISOString(), zones: gpsOffMem.zones, pts: gpsOffMem.pts }), 'application/json');
+  const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'), name = 'heatmap-osm-' + stamp + '.json';
+  const text = JSON.stringify({ type: 'rb-heatmap-osm', v: 1, date: d.toISOString(), zones: gpsOffMem.zones, pts: gpsOffMem.pts });
+  try {      // sur téléphone / tablette : menu « Partager » (messagerie, mail, Drive…) ; sinon (ou en cas d'échec) téléchargement
+    const f = new File([text], name, { type: 'application/json' });
+    if (matchMedia('(pointer:coarse)').matches && navigator.canShare && navigator.canShare({ files: [f] })) {
+      await navigator.share({ files: [f], title: name });
+      $('#goMsg').textContent = gpsOffT('Heatmap partagée.', 'Heatmap shared.'); return;
+    }
+  } catch (err) { if (err && err.name === 'AbortError') return; }
+  download(name, text, 'application/json');
   $('#goMsg').textContent = gpsOffT('Heatmap enregistrée (fichier .json).', 'Heatmap saved (.json file).');
 }
 async function gpsOffImport(file) {
