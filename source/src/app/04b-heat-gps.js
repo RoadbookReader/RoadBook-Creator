@@ -24,6 +24,16 @@ function gpsOffMerge(zones, flat) {          // remplace les points gardés dans
   gpsOffMem = { zones: gpsOffMem.zones.concat(zones).slice(-500), pts: keep };
   gpsOffRefresh(); clearTimeout(gpsOffTimer); gpsOffTimer = setTimeout(() => gpsOffDB.put(gpsOffMem), 500);
 }
+function gpsOffUnion(zones, flat) {          // import : complète sans doublon (pour chaque position, on garde le plus grand nombre de points des deux côtés)
+  const k = (la, lo) => la.toFixed(5) + ',' + lo.toFixed(5), A = new Map(), B = new Map(), old = gpsOffMem.pts, keep = [];
+  for (let i = 0; i < old.length; i += 2) { if (zones.some(z => gpsOffIn(z, old[i], old[i + 1]))) { const q = k(old[i], old[i + 1]); A.set(q, (A.get(q) || 0) + 1); } else keep.push(old[i], old[i + 1]); }
+  for (let i = 0; i < flat.length; i += 2) { const q = k(flat[i], flat[i + 1]); B.set(q, (B.get(q) || 0) + 1); }
+  let added = 0, before = 0; for (const v of A.values()) before += v;
+  for (const q of new Set([...A.keys(), ...B.keys()])) { const n = Math.max(A.get(q) || 0, B.get(q) || 0), [la, lo] = q.split(',').map(Number); for (let i = 0; i < n; i++) keep.push(la, lo); added += n; }
+  gpsOffMem = { zones: gpsOffMem.zones.concat(zones).slice(-500), pts: keep };
+  gpsOffRefresh(); clearTimeout(gpsOffTimer); gpsOffTimer = setTimeout(() => gpsOffDB.put(gpsOffMem), 500);
+  return { added: added - before, present: Math.min(before, added) };
+}
 function gpsOffRefresh() {
   const ll = []; for (let i = 0; i < gpsOffMem.pts.length; i += 2) ll.push([gpsOffMem.pts[i], gpsOffMem.pts[i + 1], 0.5]);
   if (!gpsOffHeat) { gpsOffHeat = L.heatLayer(ll, { radius: 8, blur: 12, minOpacity: 0.3 }); gpsOffLayer.addLayer(gpsOffHeat); } else gpsOffHeat.setLatLngs(ll);
@@ -170,8 +180,8 @@ async function gpsOffImport(file) {
   try {
     const j = JSON.parse(await file.text());
     if (!j || j.type !== 'rb-heatmap-osm' || !Array.isArray(j.pts) || !Array.isArray(j.zones)) throw new Error(gpsOffT('ce n’est pas un fichier de heatmap', 'not a heatmap file'));
-    gpsOffMerge(j.zones.filter(z => Array.isArray(z) && z.length === 4), j.pts.filter(x => typeof x === 'number'));
-    $('#goMsg').textContent = gpsOffT(`Heatmap importée : ${j.pts.length / 2} points ajoutés.`, `Heatmap imported: ${j.pts.length / 2} points added.`);
+    const r = gpsOffUnion(j.zones.filter(z => Array.isArray(z) && z.length === 4), j.pts.filter(x => typeof x === 'number'));
+    $('#goMsg').textContent = gpsOffT(`Heatmap importée : ${r.added} point(s) ajouté(s), ${j.pts.length / 2 - r.added} déjà présent(s).`, `Heatmap imported: ${r.added} point(s) added, ${j.pts.length / 2 - r.added} already present.`);
     const z = j.zones[j.zones.length - 1]; if (z && !map.getBounds().intersects([[z[1], z[0]], [z[3], z[2]]])) map.fitBounds([[z[1], z[0]], [z[3], z[2]]]);
   } catch (err) { $('#goMsg').textContent = gpsOffT('Import impossible : ', 'Import failed: ') + (err && err.message || err); }
 }
