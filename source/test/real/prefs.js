@@ -1,0 +1,16 @@
+const { chromium } = require('playwright'); const fs = require('fs');
+(async () => { const b = await chromium.launch(), ctx = await b.newContext({ viewport: { width: 1200, height: 760 }, locale: 'fr-FR', acceptDownloads: true }), pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.goto('file://' + __dirname + '/../../dist/generateur-roadbook.html'); await pg.waitForTimeout(800);
+  await pg.evaluate(() => { localStorage.setItem('rbgen.myLayers', JSON.stringify([{ id: 'abc', name: 'Mon fond test', url: 'https://x/{z}/{x}/{y}.png', max: 18 }])); localStorage.setItem('rbgen.theme', 'night'); localStorage.setItem('rbgen.orsKey', 'K123'); });
+  console.log('bouton menu', await pg.evaluate(() => !!document.querySelector('[data-act=prefs]')));
+  await pg.evaluate(() => document.querySelector('[data-act=prefs]').click()); await pg.waitForTimeout(300); await pg.screenshot({ path: '/tmp/prefs.png' });
+  const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('text=Enregistrer mes réglages')]); await dl.saveAs('/tmp/reglages.json');
+  const j = JSON.parse(fs.readFileSync('/tmp/reglages.json', 'utf8')); console.log('fichier', j.app, Object.keys(j.data));
+  await pg.evaluate(() => { localStorage.clear(); }); await pg.reload(); await pg.waitForTimeout(600);
+  console.log('après effacement', await pg.evaluate(() => localStorage.getItem('rbgen.myLayers')));
+  await pg.evaluate(() => document.querySelector('[data-act=prefs]').click()); await pg.waitForTimeout(200);
+  await pg.setInputFiles('#prefFile', '/tmp/reglages.json'); await pg.waitForTimeout(2000);
+  console.log('après restauration', await pg.evaluate(() => [localStorage.getItem('rbgen.myLayers'), localStorage.getItem('rbgen.theme'), localStorage.getItem('rbgen.orsKey')]));
+  await pg.evaluate(() => { document.querySelector('#layerSel') && 0; }); console.log('option perso présente', await pg.evaluate(() => [...document.querySelectorAll('#layerSel option')].some(o => /Mon fond test/.test(o.textContent))));
+  fs.writeFileSync('/tmp/mauvais.json', '{"a":1}'); await pg.evaluate(() => document.querySelector('[data-act=prefs]').click()); await pg.setInputFiles('#prefFile', '/tmp/mauvais.json'); await pg.waitForTimeout(400); console.log('toast', await pg.evaluate(() => (document.querySelector('#toast,.toast')||{}).textContent));
+  console.log('erreurs', errs); await b.close(); })();

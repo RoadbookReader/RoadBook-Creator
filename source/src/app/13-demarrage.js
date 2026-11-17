@@ -602,6 +602,7 @@ $('#moreMenu').addEventListener('click', e => {
   else if (act === 'alt') altDialog();
   else if (act === 'meas') openMeasure();
   else if (act === 'saveProject') saveProject();
+  else if (act === 'prefs') prefsDialog();
   else if (act === 'saveOsm') saveOsm();
   else if (act === 'loadOsm') $('#fileIn').click();
   else if (act === 'theme') cycleTheme();

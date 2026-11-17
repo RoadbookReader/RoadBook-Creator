@@ -184,4 +184,11 @@ Object.assign(I18N_EN, {
 "⚠ réseau indisponible : réessaie plus tard": "⚠ network unavailable: try again later",
 "Pose au moins 2 points.": "Place at least 2 points.",
 "Glisse pour déplacer le panneau (double-clic : position d’origine)": "Drag to move the panel (double-click: original position)",
+  '💾 Mes réglages (enregistrer / restaurer)': '💾 My settings (save / restore)',
+  'Mes réglages': 'My settings',
+  '📥 Restaurer depuis un fichier': '📥 Restore from a file',
+  '💾 Enregistrer mes réglages': '💾 Save my settings',
+  'Enregistre dans un petit fichier tes fonds de carte et couches personnels, le fond et la couche affichés, leurs niveaux, le thème, la langue, les rayons et ta clé OpenRoute éventuelle. Utile pour changer de navigateur ou d’appareil, ou si le navigateur vide ses données.': 'Saves to a small file your custom base maps and layers, the displayed base map and layer, their levels, the theme, the language, the radii and your OpenRoute key if you have one. Useful when changing browser or device, or if the browser clears its data.',
+  'Le projet en cours (trace, notes) n’en fait pas partie : il a son propre bouton « Enregistrer le projet ». Le fichier contient ta clé OpenRoute si tu en as une : ne le partage pas.': 'The current project (track, notes) is not included: it has its own “Save project” button. The file contains your OpenRoute key if you have one: do not share it.',
+  'Ce fichier n’est pas un fichier de réglages du générateur.': 'This is not a generator settings file.',
 });
