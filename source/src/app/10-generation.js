@@ -6,7 +6,7 @@ async function generate() {
   if (drawing) setDrawing(false);
   if (!T) { toast('Charge une trace GPX ou dessine un parcours d’abord.', 'err'); return; }
   if (routing) { toast('Patiente, l’itinéraire est encore en calcul…'); return; }
-  const SRC = [['ign', 'BD TOPO (IGN)', 'Réseau très fidèle en France'], ['ignd', 'BD TOPO détaillé (IGN)', 'Avec les repères, France seulement'], ['vt', 'OpenFreeMap vectoriel (OSM)', 'Rapide, partout dans le monde'], ['osm', 'OSM détaillé (Overpass)', 'Noms de routes, ponts, numéros : le plus complet']];
+  const SRC = [['ign', 'BD TOPO (IGN)', 'Réseau très fidèle en France'], ['vt', 'OpenFreeMap vectoriel (OSM)', 'Rapide, partout dans le monde'], ['osm', 'OSM détaillé (Overpass)', 'Noms de routes, ponts, numéros : le plus complet']];
   const cur = S.settings.data, curN = S.settings.dataN || cur;
   const sel = (id, v) => `<select id="${id}" style="width:100%">${SRC.map(([k, l]) => `<option value="${k}"${k === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
   openModal('Générer le roadbook', `<div style="font-size:13px;color:#6b6558;margin-bottom:12px;line-height:1.4">Choisis la source de chaque partie. Tu peux prendre la même pour les deux.</div>
