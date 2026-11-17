@@ -22,11 +22,13 @@ function normTileUrl(u) {
   return String(u || '').trim().replace(/&amp;/g, '&')
     .replace(/\{\$?z\}|\{zoom\}|\{\$zoom\}/gi, '{z}').replace(/\{\$?x\}/gi, '{x}').replace(/\{\$?y\}/gi, '{y}').replace(/\{\$?-y\}/gi, '{-y}');
 }
+function myObj(c) {      // objet Leaflet d'un fond ou d'une couche personnelle (créé à la demande)
+  if (!myLayerObjs.has(c.id)) myLayerObjs.set(c.id, c.type === 'vec' || c.type === 'style' ? vecCustomLayer(c) : L.tileLayer(c.url, Object.assign({ maxNativeZoom: c.max || 18, maxZoom: Math.max(19, c.max || 18), attribution: esc(c.name) }, c.kind === 'over' ? { zIndex: 5 } : {})));
+  return myLayerObjs.get(c.id);
+}
 function layerFor(key) {
   if (LAYERS[key]) return LAYERS[key];
-  const c = myLayers.find(l => 'c:' + l.id === key); if (!c) return null;
-  if (!myLayerObjs.has(c.id)) myLayerObjs.set(c.id, c.type === 'vec' || c.type === 'style' ? vecCustomLayer(c) : L.tileLayer(c.url, { maxNativeZoom: c.max || 18, maxZoom: Math.max(19, c.max || 18), attribution: esc(c.name) }));
-  return myLayerObjs.get(c.id);
+  const c = myLayers.find(l => 'c:' + l.id === key && l.kind !== 'over'); return c ? myObj(c) : null;
 }
 const lvl = x => (x == null || x === '' || !isFinite(+x) ? 100 : +x);      // 0 est une valeur valable
 let baseLevel = {}; try { baseLevel = JSON.parse(localStorage.getItem('rbgen.baseLevel') || '{}') || {}; } catch (_) {}
@@ -46,38 +48,50 @@ function rebuildLayerSelect() {
   const sel = $('#layerSel');
   sel.querySelectorAll('optgroup[data-my]').forEach(o => o.remove());
   const og = document.createElement('optgroup'); og.label = '⭐ Mes fonds'; og.dataset.my = 1;
-  for (const l of myLayers) { const o = document.createElement('option'); o.value = 'c:' + l.id; o.textContent = '⭐ ' + l.name; o.dataset.my = 1; og.appendChild(o); }
+  for (const l of myLayers.filter(x => x.kind !== 'over')) { const o = document.createElement('option'); o.value = 'c:' + l.id; o.textContent = '⭐ ' + l.name; o.dataset.my = 1; og.appendChild(o); }
   const m = document.createElement('option'); m.value = '__my'; m.textContent = '➕ Ajouter / gérer mes fonds…'; m.dataset.my = 1; og.appendChild(m); sel.appendChild(og);
   sel.value = curLayerKey;
+  syncMyHeat();
+}
+function syncMyHeat() {      // les couches personnelles à superposer rejoignent la liste Heatmap / couches
+  const sel = $('#heatSel'); if (!sel) return;
+  sel.querySelectorAll('optgroup[data-my]').forEach(o => o.remove());
+  for (const k of Object.keys(HEAT)) if (k.startsWith('c:') && !myLayers.some(l => l.kind === 'over' && 'c:' + l.id === k)) delete HEAT[k];
+  const og = document.createElement('optgroup'); og.label = '⭐ Mes couches'; og.dataset.my = 1;
+  for (const l of myLayers.filter(x => x.kind === 'over')) { HEAT['c:' + l.id] = myObj(l); const o = document.createElement('option'); o.value = 'c:' + l.id; o.textContent = '⭐ ' + l.name; og.appendChild(o); }
+  const m = document.createElement('option'); m.value = '__my'; m.textContent = '➕ Ajouter / gérer mes couches…'; og.appendChild(m); sel.appendChild(og);
+  sel.value = curHeat;
 }
 function saveMyLayers() { try { localStorage.setItem('rbgen.myLayers', JSON.stringify(myLayers)); } catch (_) {} }
 function openMyLayers(pre, err) {
   pre = pre || {};
-  const list = myLayers.length ? myLayers.map(l => `<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #e6dfd1"><div style="flex:1;min-width:0"><b>${esc(l.name)}</b><div class="help" style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.url)}</div></div><button class="mbtn danger" data-del="${l.id}">Supprimer</button></div>`).join('')
-    : '<div class="help" style="margin:0">Aucun fond personnel pour l’instant.</div>';
-  const m = openModal('Mes fonds de carte', `${list}
-    <h3 style="font-family:var(--cond);font-size:17px;margin:16px 0 8px">Ajouter un fond</h3>
+  const list = myLayers.length ? myLayers.map(l => `<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #e6dfd1"><div style="flex:1;min-width:0"><b>${esc(l.name)}</b> <span class="help" style="margin:0">(${l.kind === 'over' ? 'couche à superposer' : 'fond de carte'})</span><div class="help" style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.url)}</div></div><button class="mbtn danger" data-del="${l.id}">Supprimer</button></div>`).join('')
+    : '<div class="help" style="margin:0">Aucun fond ni couche personnels pour l’instant.</div>';
+  const m = openModal('Mes fonds de carte et couches', `${list}
+    <h3 style="font-family:var(--cond);font-size:17px;margin:16px 0 8px">Ajouter un fond ou une couche</h3>
     ${err ? `<div style="color:var(--err);font-weight:600;margin-bottom:8px">${esc(err)}</div>` : ''}
     <div class="fld"><label for="mlName">Nom</label><input id="mlName" type="text" value="${esc(pre.name || '')}" placeholder="ex. IGN SCAN 25"></div>
     <div class="fld"><label for="mlUrl">Adresse des tuiles</label><textarea id="mlUrl" rows="3" placeholder="https://…/{z}/{x}/{y}.png">${esc(pre.url || '')}</textarea></div>
     <div class="help">Colle l’adresse d’un service de tuiles contenant <b>{z}</b>, <b>{x}</b> et <b>{y}</b> (les formes {$z}, {$x}, {$y} sont aussi acceptées). Les tuiles vectorielles <b>.pbf</b> sont acceptées, ainsi qu’un fichier de style <b>.json</b> (MapLibre) qui donne les couleurs.</div>
+    <div class="fld"><label>Ajouter comme</label><div style="display:flex;gap:16px;flex-wrap:wrap"><label style="font-weight:400"><input type="radio" name="mlKind" value="base"${pre.kind === 'over' ? '' : ' checked'}> Fond de carte</label><label style="font-weight:400"><input type="radio" name="mlKind" value="over"${pre.kind === 'over' ? ' checked' : ''}> Couche à superposer</label></div></div>
     <div class="fld" style="max-width:170px"><label for="mlMax">Zoom maxi des tuiles</label><input id="mlMax" type="number" min="1" max="22" value="${pre.max || 18}"></div>`, [
     { label: 'Fermer' }, 'sp',
     { label: 'Ajouter et afficher', cls: 'primary', onClick: () => {
       const name = $('#mlName').value.trim(), url = normTileUrl($('#mlUrl').value), max = clamp(parseInt($('#mlMax').value, 10) || 18, 1, 22);
-      const again = e => openMyLayers({ name, url: $('#mlUrl').value, max }, e);
+      const kind = (document.querySelector('input[name=mlKind]:checked') || {}).value === 'over' ? 'over' : 'base', again = e => openMyLayers({ name, url: $('#mlUrl').value, max, kind }, e);
       if (!/^https?:\/\//i.test(url)) return again('L’adresse doit commencer par http:// ou https://');
       const type = /\.json(\?|#|$)/i.test(url) ? 'style' : /\.(pbf|mvt)(\?|#|$)/i.test(url) ? 'vec' : '';
       if (type !== 'style' && (!/\{z\}/.test(url) || !/\{x\}/.test(url) || !/\{-?y\}/.test(url))) return again('L’adresse doit contenir {z}, {x} et {y} (ou être un fichier de style .json).');
       const l = { id: Date.now().toString(36), name: name || 'Mon fond ' + (myLayers.length + 1), url, max };
-      if (type) l.type = type;
-      myLayers.push(l); saveMyLayers(); rebuildLayerSelect(); setBaseLayer('c:' + l.id);
-      toast(`Fond « ${l.name} » ajouté. S’il reste gris, vérifie l’adresse (ou le zoom maxi).`, 'ok');
+      if (type) l.type = type; if (kind === 'over') l.kind = 'over';
+      myLayers.push(l); saveMyLayers(); rebuildLayerSelect();
+      if (kind === 'over') { setHeat('c:' + l.id); toast(`Couche « ${l.name} » ajoutée par-dessus le fond (menu Heatmap / couches). Si rien ne s’affiche, vérifie l’adresse (ou le zoom maxi).`, 'ok'); }
+      else { setBaseLayer('c:' + l.id); toast(`Fond « ${l.name} » ajouté. S’il reste gris, vérifie l’adresse (ou le zoom maxi).`, 'ok'); }
     } }]);
   m.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.del; myLayers = myLayers.filter(l => l.id !== id); saveMyLayers();
     const lay = myLayerObjs.get(id); myLayerObjs.delete(id);
-    if (curLayerKey === 'c:' + id) setBaseLayer('topo'); else if (lay) map.removeLayer(lay);
+    if (curLayerKey === 'c:' + id) setBaseLayer('topo'); else if (curHeat === 'c:' + id) setHeat(''); else if (lay) map.removeLayer(lay);
     rebuildLayerSelect(); openMyLayers();
   }));
 }
@@ -117,12 +131,13 @@ function setHeat(key) {
 }
 $('#heatLvl').addEventListener('input', e => { if (!curHeat) return; heatLevel[curHeat] = +e.target.value; try { localStorage.setItem('rbgen.heatLevel', JSON.stringify(heatLevel)); } catch (_) {} applyHeatLevel(); });
 $('#heatLvlTxt').addEventListener('dblclick', () => { if (curHeat) { delete heatLevel[curHeat]; applyHeatLevel(); } });
-$('#heatSel').addEventListener('change', e => setHeat(e.target.value));
+$('#heatSel').addEventListener('change', e => { if (e.target.value === '__my') { e.target.value = curHeat; openMyLayers(); return; } setHeat(e.target.value); });
 $('#goVmin').value = gpsOffOpt.vmin; $('#goVmax').value = gpsOffOpt.vmax; $('#goHr').checked = !!gpsOffOpt.hr; $('#goDist').value = gpsOffOpt.dist;
 $('#goLoad').addEventListener('click', gpsOffLoad); $('#goWidth').value = gpsOffOpt.width; $('#goTrace').addEventListener('click', gpsOffTrace); $('#goGapBtn').addEventListener('click', gpsOffGaps);
 $('#goSave').addEventListener('click', gpsOffSave); $('#goClear').addEventListener('click', gpsOffClear);
 $('#goOpen').addEventListener('click', () => $('#goFile').click());
 $('#goFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) gpsOffImport(f); });
+syncMyHeat();
 try { setHeat(localStorage.getItem('rbgen.heat') || ''); } catch (_) {}
 $('#baseLvl').addEventListener('input', e => { baseLevel[curLayerKey] = +e.target.value; try { localStorage.setItem('rbgen.baseLevel', JSON.stringify(baseLevel)); } catch (_) {} applyBaseLevel(); });
 $('#baseLvlTxt').addEventListener('dblclick', () => { delete baseLevel[curLayerKey]; applyBaseLevel(); });

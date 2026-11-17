@@ -3,7 +3,7 @@
    - type 'style' : adresse d'un fichier de style MapLibre / Mapbox (.json) : on en lit la source de tuiles et on peint les couches
                     (fond, surfaces, lignes, points, textes) avec un interpréteur de style simplifié (styleDraw).
    Réutilise ctlTile (téléchargement) et decodeMVT (décodage) de 12b-controle.js ; le dessin est celui d'un GridLayer sur canvas. */
-const VSTYLE_MEM = new Map();      // adresse du style → promesse { layers, bg, tpl, minz, maxz }
+// mémoire des styles (adresse → promesse { layers, bg, tpl, minz, maxz }) : créée à la demande, car 05-carte.js appelle vsLoad avant que ce fichier ait fini de se charger
 function vsColor(s) {      // chaîne CSS quelconque → [r, g, b, a]
   vsColor.c = vsColor.c || new Map(); if (vsColor.c.has(s)) return vsColor.c.get(s);
   let r = [0, 0, 0, 1];
@@ -43,7 +43,7 @@ function vsText(tf, p) {      // text-field : "{nom}", ["get", "nom"], ["concat"
   return '';
 }
 async function vsLoad(url) {      // télécharge et prépare un style
-  if (VSTYLE_MEM.has(url)) return VSTYLE_MEM.get(url);
+  const MEM = vsLoad.mem = vsLoad.mem || new Map(); if (MEM.has(url)) return MEM.get(url);
   const pr = (async () => {
     const r = await fetch(url); if (!r.ok) throw new Error('style introuvable'); const j = await r.json();
     let src = null; for (const k in (j.sources || {})) if ((j.sources[k].type || '') === 'vector') { src = j.sources[k]; break; }
@@ -55,7 +55,7 @@ async function vsLoad(url) {      // télécharge et prépare un style
     const bgL = layers.find(l => l.type === 'background'), bg = bgL && bgL.paint && typeof bgL.paint['background-color'] === 'string' ? bgL.paint['background-color'] : '#f4f1e8';
     return { layers: layers.filter(l => l.type !== 'background'), bg, tpl: tiles, minz: minz == null ? 0 : minz, maxz: maxz == null ? 14 : maxz };
   })();
-  pr.catch(() => VSTYLE_MEM.delete(url)); VSTYLE_MEM.set(url, pr); return pr;
+  pr.catch(() => MEM.delete(url)); MEM.set(url, pr); return pr;
 }
 function styleDraw(S, g, T, z, N, sc) {
   const pth = (f, ext, close) => { g.beginPath(); for (const r of f.rings) { r.forEach(([x, y], i) => { x = x / ext * N; y = y / ext * N; i ? g.lineTo(x, y) : g.moveTo(x, y); }); if (close) g.closePath(); } };
@@ -117,7 +117,7 @@ function vecCustomLayer(c) {      // c : { url, type: 'vec' | 'style', max, name
     createTile(co, done) {
       const cv = document.createElement('canvas'), S2 = 2, N = 256; cv.width = cv.height = N * S2; const g = cv.getContext('2d'); g.scale(S2, S2);
       ready.then(() => {
-        const tpl = c.type === 'style' ? (S && S.tpl) : c.url; g.fillStyle = S ? S.bg : '#f4f1e8'; g.fillRect(0, 0, N, N);
+        const tpl = c.type === 'style' ? (S && S.tpl) : c.url; if (c.kind !== 'over') { g.fillStyle = S ? S.bg : '#f4f1e8'; g.fillRect(0, 0, N, N); }
         if (!tpl) { done(null, cv); return; }
         const zmin = c.type === 'style' ? S.minz : 0, zmax = c.type === 'style' ? S.maxz : (c.max || 14), jobs = [];
         if (co.z > zmax) { const f = 2 ** (co.z - zmax), px = Math.floor(co.x / f), py = Math.floor(co.y / f); jobs.push({ z: zmax, x: px, y: py, ox: -(co.x - px * f) * N, oy: -(co.y - py * f) * N, s: f }); }
@@ -135,7 +135,7 @@ function vecCustomLayer(c) {      // c : { url, type: 'vec' | 'style', max, name
       });
       return cv;
     } });
-  const lay = new Layer({ minZoom: 4, maxZoom: 19, tileSize: 256, attribution: esc(c.name || '') });
+  const lay = new Layer({ minZoom: 4, maxZoom: 19, tileSize: 256, zIndex: c.kind === 'over' ? 5 : 1, attribution: esc(c.name || '') });
   lay.vecReady = ready.then(() => { if (err) throw err; });
   return lay;
 }
