@@ -1,0 +1,13 @@
+const { chromium } = require('playwright');
+(async () => { const b = await chromium.launch(), pg = await (await b.newContext({ viewport: { width: 900, height: 760 }, locale: 'fr-FR' })).newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.goto('file://' + __dirname + '/../../dist/generateur-roadbook.html'); await pg.waitForTimeout(800);
+  const open = async () => { await pg.evaluate(() => document.querySelector('[data-act=settings]').click()); await pg.waitForTimeout(300); };
+  await open(); console.log('défaut', await pg.evaluate(() => [document.querySelector('#sData').value, document.querySelector('#sDataN').value]));
+  await pg.selectOption('#sData', 'ign'); await pg.selectOption('#sDataN', 'osm'); await pg.screenshot({ path: '/tmp/src3.png' });
+  await pg.click('text=Appliquer, text=Enregistrer, text=OK').catch(() => {});
+  const btns = await pg.evaluate(() => [...document.querySelectorAll('#modal .mf button')].map(b => b.textContent)); console.log('boutons', btns);
+  await pg.evaluate(() => [...document.querySelectorAll('#modal .mf button')].pop().click()); await pg.waitForTimeout(300);
+  await open(); console.log('après', await pg.evaluate(() => [document.querySelector('#sData').value, document.querySelector('#sDataN').value]));
+  await pg.selectOption('#sDataN', ''); await pg.evaluate(() => [...document.querySelectorAll('#modal .mf button')].pop().click()); await pg.waitForTimeout(300);
+  await open(); console.log('remis', await pg.evaluate(() => [document.querySelector('#sData').value, document.querySelector('#sDataN').value]));
+  console.log('erreurs', errs); await b.close(); })();

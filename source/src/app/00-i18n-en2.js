@@ -191,4 +191,11 @@ Object.assign(I18N_EN, {
   'Enregistre dans un petit fichier tes fonds de carte et couches personnels, le fond et la couche affichés, leurs niveaux, le thème, la langue, les rayons et ta clé OpenRoute éventuelle. Utile pour changer de navigateur ou d’appareil, ou si le navigateur vide ses données.': 'Saves to a small file your custom base maps and layers, the displayed base map and layer, their levels, the theme, the language, the radii and your OpenRoute key if you have one. Useful when changing browser or device, or if the browser clears its data.',
   'Le projet en cours (trace, notes) n’en fait pas partie : il a son propre bouton « Enregistrer le projet ». Le fichier contient ta clé OpenRoute si tu en as une : ne le partage pas.': 'The current project (track, notes) is not included: it has its own “Save project” button. The file contains your OpenRoute key if you have one: do not share it.',
   'Ce fichier n’est pas un fichier de réglages du générateur.': 'This is not a generator settings file.',
+  'Source des instructions de la 3e case (noms, ponts, numéros…)': 'Source of the 3rd box instructions (names, bridges, numbers…)',
+  'Même source que les chemins': 'Same source as the paths',
+  'Rapide — fond vectoriel OpenFreeMap': 'Fast — OpenFreeMap vector base',
+  'IGN — BD TOPO, France seulement': 'IGN — BD TOPO, France only',
+  'Les tulipes viennent de la source des chemins ci-dessus ; les textes de la 3e case peuvent venir d’une autre source (même choix que dans « Générer le roadbook »).': 'Tulips come from the paths source above; the 3rd box texts can come from another source (same choice as in “Generate the roadbook”).',
+  'BD TOPO détaillé (IGN)': 'Detailed BD TOPO (IGN)',
+  'Avec les repères, France seulement': 'With landmarks, France only',
 });
