@@ -1041,6 +1041,9 @@ body.dragNote .leaflet-tooltip{display:none}
 .dropdown .mbody.open{display:block}
 
 .gpsoff{font-size:12px;line-height:1.5;margin-top:4px;max-width:360px}.gpsoff input[type=number]{width:52px}.gpsoff button{font-size:12px;padding:3px 8px;cursor:pointer}.gpsoff .gomsg{margin-top:2px;opacity:.85}
+
+.livest { font-size: 12px; color: #6b6558; } .livest.warn { color: #b25a00; }
+#drawBox b.grab{display:block;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}#drawBox b.grab::before{content:"⠿ ";opacity:.55}
 </style>
 </head>
 <body>
@@ -1048,7 +1051,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261117.1812</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261117.2008</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1089,7 +1092,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261117.1812</div>
+          <div class="ver">Version v0.261117.2008</div>
         </div>
       </div>
     </div>
@@ -1184,6 +1187,10 @@ body.dragNote .leaflet-tooltip{display:none}
           <button id="bSnapMode" class="on">🧲 Routage : activé</button>
           <select id="magMax" title="Aimant : distance maximale entre ton clic et la route ou le chemin"><option value="0">🧲 Aimant coupé</option><option value="5">🧲 5 m</option><option value="10">🧲 10 m</option><option value="20">🧲 20 m</option><option value="30">🧲 30 m</option><option value="40" selected>🧲 40 m</option><option value="50">🧲 50 m</option></select>
           <button id="orsBtn" title="Clé OpenRouteService (profils rando, VTT, vélo de route)">🔑</button>
+        </div>
+        <div class="row2" title="Génère et met à jour les notes du roadbook à chaque point posé (calcul de toute la trace après une pause d’1,5 s). Les notes que tu as modifiées sont gardées.">
+          <label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" id="liveChk"> ⚡ Roadbook en direct</label>
+          <span id="liveSt" class="livest"></span>
         </div>
         <div class="dgrp">Dessin</div>
         <div class="row2">
@@ -2899,6 +2906,13 @@ Object.assign(I18N_EN, {
 "⭐ Mes couches": "⭐ My layers",
 "➕ Ajouter / gérer mes couches…": "➕ Add / manage my layers…",
 "Ajouter un fond ou une couche": "Add a base map or a layer",
+"⚡ Roadbook en direct": "⚡ Live roadbook",
+"Génère et met à jour les notes du roadbook à chaque point posé (calcul de toute la trace après une pause d’1,5 s). Les notes que tu as modifiées sont gardées.": "Generates and updates the roadbook notes each time you add a point (the whole track is recalculated after a 1.5 s pause). Notes you edited are kept.",
+"⏳ en attente…": "⏳ waiting…",
+"⚠ aucun chemin trouvé autour de la trace": "⚠ no path found around the track",
+"⚠ réseau indisponible : réessaie plus tard": "⚠ network unavailable: try again later",
+"Pose au moins 2 points.": "Place at least 2 points.",
+"Glisse pour déplacer le panneau (double-clic : position d’origine)": "Drag to move the panel (double-click: original position)",
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
 // Le texte des notes du roadbook (cases .k3) n'est PAS traduit ici : sa langue sera un réglage séparé (étape 2).
@@ -3181,6 +3195,7 @@ function setTrack(ll, silent, keepMM) {
   if (changed && !keepMM) S.mm = null;
   buildDerived();
   if (changed && !silent && S.notes.length) S.stale = true;
+  if (changed && !silent && typeof liveSchedule === 'function') liveSchedule();
   renderTrack();
   renderInfo();
   if (!silent) save();
@@ -4470,6 +4485,21 @@ async function routeSeg(a, b, mode) {
   return [a.slice(0, 2), b.slice(0, 2)];
 }
 
+/* ---- panneau dessin déplaçable : on le saisit par son titre (souris ou doigt) ; double-clic sur le titre = position d'origine ---- */
+(function drawBoxDrag() {
+  const box = $('#drawBox'), h = box.querySelector('b'); if (!h) return;
+  h.classList.add('grab'); h.title = 'Glisse pour déplacer le panneau (double-clic : position d’origine)';
+  const clampPos = (l, t) => { const P = box.offsetParent || box.parentElement; return [Math.max(0, Math.min(l, P.clientWidth - 70)), Math.max(0, Math.min(t, P.clientHeight - 36))]; };
+  const put = (l, t) => { box.style.left = l + 'px'; box.style.top = t + 'px'; };
+  try { const p = JSON.parse(localStorage.getItem('rbgen.drawPos') || 'null'); if (p) put(...clampPos(p[0], p[1])); } catch (_) {}
+  let st = null;
+  h.addEventListener('pointerdown', e => { if (e.button) return; st = { x: e.clientX, y: e.clientY, l: box.offsetLeft, t: box.offsetTop }; h.setPointerCapture(e.pointerId); e.preventDefault(); });
+  h.addEventListener('pointermove', e => { if (st) put(...clampPos(st.l + e.clientX - st.x, st.t + e.clientY - st.y)); });
+  const end = () => { if (!st) return; st = null; try { localStorage.setItem('rbgen.drawPos', JSON.stringify([box.offsetLeft, box.offsetTop])); } catch (_) {} };
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  h.addEventListener('dblclick', () => { box.style.left = box.style.top = ''; try { localStorage.removeItem('rbgen.drawPos'); } catch (_) {} });
+  window.addEventListener('resize', () => { if (box.style.left) put(...clampPos(box.offsetLeft, box.offsetTop)); });
+})();
 /* ============================================================
    7. Réseau de chemins OSM (Overpass)
    ============================================================ */
@@ -6992,27 +7022,16 @@ function reportText(m) {      // rapport de génération en texte brut (copie / 
   const v = document.querySelector('.ver'), nm = ($('#rbName') || {}).value || '';
   return [m.querySelector('h2').textContent, (nm ? nm + ' — ' : '') + new Date().toLocaleString('fr-FR') + (v ? ' — ' + v.textContent.trim() : ''), '', body.textContent.replace(/\n{3,}/g, '\n\n').trim()].join('\n') + '\n';
 }
-function genWarn(msg) { GENLOG.push(msg); toast(msg, 'err'); }      // avertissements de la génération, repris dans le rapport final
-async function runGenerate() {
-  cancelGen = false; GENLOG = [];
-  const m = openModal('Génération du roadbook', `<div id="pTxt">Préparation…</div><div class="prog"><div id="pBar"></div></div>`, [{ label: 'Annuler', onClick: () => { cancelGen = true; } }], { noEsc: true });
-  const t0 = Date.now(); let lastTxt = 'Préparation…';
-  const show = () => { const t = m.querySelector('#pTxt'); if (t) t.textContent = lastTxt + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s'; };
-  const prog = (txt, f) => { lastTxt = txt; show(); const b = m.querySelector('#pBar'); if (b) b.style.width = Math.round(f * 100) + '%'; };
-  const ticker = setInterval(show, 1000);
-  try {
+let GENQUIET = false;      // mode « en direct » : avertissements sans message à l'écran
+function genWarn(msg) { GENLOG.push(msg); if (!GENQUIET) toast(msg, 'err'); }      // avertissements de la génération, repris dans le rapport final
+async function genPipeline(prog, isCancelled) {      // calcul complet des notes sur la trace entière (génération normale et mode « en direct »)
     S.mm = null; buildDerived();                // on repart de la trace d'origine
-    await fetchOSM((f, txt) => prog(txt, 0.05 + 0.6 * f), () => cancelGen);
+    await fetchOSM((f, txt) => prog(txt, 0.05 + 0.6 * f), isCancelled);
     S.dataSrc = (G && G.used) || '';
-    if (cancelGen) throw new Error('annulé');
-    if (!G.ways.length) {
-      closeModal(); renderAll();
-      openModal('Aucun chemin trouvé', 'Aucun chemin OpenStreetMap n’a été trouvé autour de ta trace : impossible de repérer les intersections.<br><br>Vérifie sur la carte que la trace passe bien sur des chemins (fond CyclOSM pour mieux les voir).'
-        + `<div class="help" style="margin-top:12px">Détail technique : ${esc(G.diag || '')}</div>`, [{ label: 'OK', cls: 'primary' }]);
-      return;
-    }
+    if (isCancelled()) throw new Error('annulé');
+    if (!G.ways.length) return { noWays: true };
     prog('Recalage de la trace sur les chemins…', 0.68);
-    const mm = S.settings.tol === 0 ? null : await mapMatch(G, f => prog('Recalage de la trace sur les chemins…', 0.68 + 0.17 * f), () => cancelGen);      // 0 = pas de recalage
+    const mm = S.settings.tol === 0 ? null : await mapMatch(G, f => prog('Recalage de la trace sur les chemins…', 0.68 + 0.17 * f), isCancelled);      // 0 = pas de recalage
     S.mm = mm ? mm.ll : null; buildDerived();
     const ratio = mm ? mm.ratio : 0;
     prog('Repérage des intersections…', 0.87); await sleep(30);
@@ -7030,8 +7049,8 @@ async function runGenerate() {
       prog('Chargement de la source des instructions…', 0.96);
       try {
         S.settings.data = dN; G = null;
-        await fetchOSM((f, txt) => prog(txt, 0.96), () => cancelGen);
-        if (cancelGen) throw new Error('annulé');
+        await fetchOSM((f, txt) => prog(txt, 0.96), isCancelled);
+        if (isCancelled()) throw new Error('annulé');
         if (G && G.ways && G.ways.length) S.dataSrcN = G.used || ''; else G = G0;
       } catch (e) { if (/annulé/.test(e.message || '')) throw e; console.warn('source des instructions indisponible', e); G = G0; genWarn('Source des instructions indisponible : la source des tulipes est utilisée.'); }
       finally { S.settings.data = dT; }
@@ -7044,6 +7063,24 @@ async function runGenerate() {
     G = G0;      // le réseau des tulipes reste celui du roadbook (retouche des tulipes)
     S.notes = [...all, ...manual]; applyNoteLang();
     S.stale = false; S.sel = null;
+    return { mm, ratio, jn, bends, rep, fr, manual, all };
+}
+async function runGenerate() {
+  cancelGen = false; GENLOG = [];
+  const m = openModal('Génération du roadbook', `<div id="pTxt">Préparation…</div><div class="prog"><div id="pBar"></div></div>`, [{ label: 'Annuler', onClick: () => { cancelGen = true; } }], { noEsc: true });
+  const t0 = Date.now(); let lastTxt = 'Préparation…';
+  const show = () => { const t = m.querySelector('#pTxt'); if (t) t.textContent = lastTxt + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s'; };
+  const prog = (txt, f) => { lastTxt = txt; show(); const b = m.querySelector('#pBar'); if (b) b.style.width = Math.round(f * 100) + '%'; };
+  const ticker = setInterval(show, 1000);
+  try {
+    const R = await genPipeline(prog, () => cancelGen);
+    if (R.noWays) {
+      closeModal(); renderAll();
+      openModal('Aucun chemin trouvé', 'Aucun chemin OpenStreetMap n’a été trouvé autour de ta trace : impossible de repérer les intersections.<br><br>Vérifie sur la carte que la trace passe bien sur des chemins (fond CyclOSM pour mieux les voir).'
+        + `<div class="help" style="margin-top:12px">Détail technique : ${esc(G.diag || '')}</div>`, [{ label: 'OK', cls: 'primary' }]);
+      return;
+    }
+    const { mm, ratio, jn, bends, rep, fr, manual, all } = R;
     closeModal(); renderTrack(); renderAll();
     if (S.notes.length > 1) map.fitBounds(line.getBounds(), { padding: [40, 40] });
     const pc = Math.round(ratio * 100);
@@ -7070,6 +7107,43 @@ async function runGenerate() {
   } finally { clearInterval(ticker); }
 }
 
+/* ============================================================
+   Roadbook en direct : pendant le dessin, les notes sont recalculées après chaque point posé (pause de 1,5 s).
+   Réutilise genPipeline (10-generation.js) : calcul complet de la trace, sans fenêtre ni rapport. Les notes modifiées ou ajoutées
+   à la main sont gardées (keepOnRegen), les routes déjà téléchargées sont réutilisées (tuiles en mémoire).
+   ============================================================ */
+const LIVE = { on: false, running: false, ver: 0, timer: 0 };
+try { LIVE.on = localStorage.getItem('rbgen.live') === '1'; } catch (_) {}
+function liveStatus(txt, warn) { const e = $('#liveSt'); if (e) { e.textContent = txt; e.classList.toggle('warn', !!warn); } }
+function liveSchedule() {      // appelé à chaque changement de la trace (setTrack)
+  if (!LIVE.on || !drawing) return;
+  LIVE.ver++; clearTimeout(LIVE.timer);
+  if (!T || S.ll.length < 2) { liveStatus(''); return; }
+  liveStatus('⏳ en attente…');
+  LIVE.timer = setTimeout(liveRun, 1500);
+}
+async function liveRun() {
+  if (!LIVE.on || !T || S.ll.length < 2) return;
+  if (LIVE.running) return;      // le calcul en cours est annulé par le nouveau changement (version) puis relancé à sa fin
+  LIVE.running = true; const ver = LIVE.ver, t0 = Date.now(); GENQUIET = true; GENLOG = [];
+  try {
+    const R = await genPipeline(txt => liveStatus('⏳ ' + txt.replace(/…$/, '') + '…'), () => LIVE.ver !== ver || !LIVE.on);
+    if (R.noWays) liveStatus('⚠ aucun chemin trouvé autour de la trace', true);
+    else {
+      renderAll(); const sec = Math.round((Date.now() - t0) / 100) / 10;
+      liveStatus(`✓ ${S.notes.length} notes · ${sec} s` + (GENLOG.length ? ' · ' + GENLOG[0] : ''), sec > 25 || GENLOG.length > 0);
+    }
+  } catch (e) {
+    if (!/annulé/.test(e && e.message || '')) { console.warn('roadbook en direct', e); liveStatus('⚠ réseau indisponible : réessaie plus tard', true); }
+  } finally { GENQUIET = false; LIVE.running = false; }
+  if (LIVE.on && LIVE.ver !== ver) { clearTimeout(LIVE.timer); LIVE.timer = setTimeout(liveRun, 300); }      // la trace a changé pendant le calcul
+}
+$('#liveChk').checked = LIVE.on;
+$('#liveChk').addEventListener('change', e => {
+  LIVE.on = e.target.checked; try { localStorage.setItem('rbgen.live', LIVE.on ? '1' : '0'); } catch (_) {}
+  if (LIVE.on) { if (T && S.ll.length > 1) { liveSchedule(); } else liveStatus('Pose au moins 2 points.'); }
+  else { LIVE.ver++; clearTimeout(LIVE.timer); liveStatus(''); }
+});
 /* ============================================================
    12. Export GPX OpenRally, impression, projet
    ============================================================ */
