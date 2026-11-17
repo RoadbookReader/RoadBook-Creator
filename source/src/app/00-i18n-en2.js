@@ -177,4 +177,10 @@ Object.assign(I18N_EN, {
 "⭐ Mes couches": "⭐ My layers",
 "➕ Ajouter / gérer mes couches…": "➕ Add / manage my layers…",
 "Ajouter un fond ou une couche": "Add a base map or a layer",
+"⚡ Roadbook en direct": "⚡ Live roadbook",
+"Génère et met à jour les notes du roadbook à chaque point posé (calcul de toute la trace après une pause d’1,5 s). Les notes que tu as modifiées sont gardées.": "Generates and updates the roadbook notes each time you add a point (the whole track is recalculated after a 1.5 s pause). Notes you edited are kept.",
+"⏳ en attente…": "⏳ waiting…",
+"⚠ aucun chemin trouvé autour de la trace": "⚠ no path found around the track",
+"⚠ réseau indisponible : réessaie plus tard": "⚠ network unavailable: try again later",
+"Pose au moins 2 points.": "Place at least 2 points.",
 });

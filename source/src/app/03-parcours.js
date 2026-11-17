@@ -13,6 +13,7 @@ function setTrack(ll, silent, keepMM) {
   if (changed && !keepMM) S.mm = null;
   buildDerived();
   if (changed && !silent && S.notes.length) S.stale = true;
+  if (changed && !silent && typeof liveSchedule === 'function') liveSchedule();
   renderTrack();
   renderInfo();
   if (!silent) save();

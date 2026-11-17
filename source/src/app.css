@@ -370,3 +370,5 @@ body.dragNote .leaflet-tooltip{display:none}
 .dropdown .mbody.open{display:block}
 
 .gpsoff{font-size:12px;line-height:1.5;margin-top:4px;max-width:360px}.gpsoff input[type=number]{width:52px}.gpsoff button{font-size:12px;padding:3px 8px;cursor:pointer}.gpsoff .gomsg{margin-top:2px;opacity:.85}
+
+.livest { font-size: 12px; color: #6b6558; } .livest.warn { color: #b25a00; }

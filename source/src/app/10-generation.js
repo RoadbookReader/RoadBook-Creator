@@ -46,27 +46,16 @@ function reportText(m) {      // rapport de génération en texte brut (copie / 
   const v = document.querySelector('.ver'), nm = ($('#rbName') || {}).value || '';
   return [m.querySelector('h2').textContent, (nm ? nm + ' — ' : '') + new Date().toLocaleString('fr-FR') + (v ? ' — ' + v.textContent.trim() : ''), '', body.textContent.replace(/\n{3,}/g, '\n\n').trim()].join('\n') + '\n';
 }
-function genWarn(msg) { GENLOG.push(msg); toast(msg, 'err'); }      // avertissements de la génération, repris dans le rapport final
-async function runGenerate() {
-  cancelGen = false; GENLOG = [];
-  const m = openModal('Génération du roadbook', `<div id="pTxt">Préparation…</div><div class="prog"><div id="pBar"></div></div>`, [{ label: 'Annuler', onClick: () => { cancelGen = true; } }], { noEsc: true });
-  const t0 = Date.now(); let lastTxt = 'Préparation…';
-  const show = () => { const t = m.querySelector('#pTxt'); if (t) t.textContent = lastTxt + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s'; };
-  const prog = (txt, f) => { lastTxt = txt; show(); const b = m.querySelector('#pBar'); if (b) b.style.width = Math.round(f * 100) + '%'; };
-  const ticker = setInterval(show, 1000);
-  try {
+let GENQUIET = false;      // mode « en direct » : avertissements sans message à l'écran
+function genWarn(msg) { GENLOG.push(msg); if (!GENQUIET) toast(msg, 'err'); }      // avertissements de la génération, repris dans le rapport final
+async function genPipeline(prog, isCancelled) {      // calcul complet des notes sur la trace entière (génération normale et mode « en direct »)
     S.mm = null; buildDerived();                // on repart de la trace d'origine
-    await fetchOSM((f, txt) => prog(txt, 0.05 + 0.6 * f), () => cancelGen);
+    await fetchOSM((f, txt) => prog(txt, 0.05 + 0.6 * f), isCancelled);
     S.dataSrc = (G && G.used) || '';
-    if (cancelGen) throw new Error('annulé');
-    if (!G.ways.length) {
-      closeModal(); renderAll();
-      openModal('Aucun chemin trouvé', 'Aucun chemin OpenStreetMap n’a été trouvé autour de ta trace : impossible de repérer les intersections.<br><br>Vérifie sur la carte que la trace passe bien sur des chemins (fond CyclOSM pour mieux les voir).'
-        + `<div class="help" style="margin-top:12px">Détail technique : ${esc(G.diag || '')}</div>`, [{ label: 'OK', cls: 'primary' }]);
-      return;
-    }
+    if (isCancelled()) throw new Error('annulé');
+    if (!G.ways.length) return { noWays: true };
     prog('Recalage de la trace sur les chemins…', 0.68);
-    const mm = S.settings.tol === 0 ? null : await mapMatch(G, f => prog('Recalage de la trace sur les chemins…', 0.68 + 0.17 * f), () => cancelGen);      // 0 = pas de recalage
+    const mm = S.settings.tol === 0 ? null : await mapMatch(G, f => prog('Recalage de la trace sur les chemins…', 0.68 + 0.17 * f), isCancelled);      // 0 = pas de recalage
     S.mm = mm ? mm.ll : null; buildDerived();
     const ratio = mm ? mm.ratio : 0;
     prog('Repérage des intersections…', 0.87); await sleep(30);
@@ -84,8 +73,8 @@ async function runGenerate() {
       prog('Chargement de la source des instructions…', 0.96);
       try {
         S.settings.data = dN; G = null;
-        await fetchOSM((f, txt) => prog(txt, 0.96), () => cancelGen);
-        if (cancelGen) throw new Error('annulé');
+        await fetchOSM((f, txt) => prog(txt, 0.96), isCancelled);
+        if (isCancelled()) throw new Error('annulé');
         if (G && G.ways && G.ways.length) S.dataSrcN = G.used || ''; else G = G0;
       } catch (e) { if (/annulé/.test(e.message || '')) throw e; console.warn('source des instructions indisponible', e); G = G0; genWarn('Source des instructions indisponible : la source des tulipes est utilisée.'); }
       finally { S.settings.data = dT; }
@@ -98,6 +87,24 @@ async function runGenerate() {
     G = G0;      // le réseau des tulipes reste celui du roadbook (retouche des tulipes)
     S.notes = [...all, ...manual]; applyNoteLang();
     S.stale = false; S.sel = null;
+    return { mm, ratio, jn, bends, rep, fr, manual, all };
+}
+async function runGenerate() {
+  cancelGen = false; GENLOG = [];
+  const m = openModal('Génération du roadbook', `<div id="pTxt">Préparation…</div><div class="prog"><div id="pBar"></div></div>`, [{ label: 'Annuler', onClick: () => { cancelGen = true; } }], { noEsc: true });
+  const t0 = Date.now(); let lastTxt = 'Préparation…';
+  const show = () => { const t = m.querySelector('#pTxt'); if (t) t.textContent = lastTxt + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s'; };
+  const prog = (txt, f) => { lastTxt = txt; show(); const b = m.querySelector('#pBar'); if (b) b.style.width = Math.round(f * 100) + '%'; };
+  const ticker = setInterval(show, 1000);
+  try {
+    const R = await genPipeline(prog, () => cancelGen);
+    if (R.noWays) {
+      closeModal(); renderAll();
+      openModal('Aucun chemin trouvé', 'Aucun chemin OpenStreetMap n’a été trouvé autour de ta trace : impossible de repérer les intersections.<br><br>Vérifie sur la carte que la trace passe bien sur des chemins (fond CyclOSM pour mieux les voir).'
+        + `<div class="help" style="margin-top:12px">Détail technique : ${esc(G.diag || '')}</div>`, [{ label: 'OK', cls: 'primary' }]);
+      return;
+    }
+    const { mm, ratio, jn, bends, rep, fr, manual, all } = R;
     closeModal(); renderTrack(); renderAll();
     if (S.notes.length > 1) map.fitBounds(line.getBounds(), { padding: [40, 40] });
     const pc = Math.round(ratio * 100);
