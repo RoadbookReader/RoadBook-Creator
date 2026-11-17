@@ -183,4 +183,5 @@ Object.assign(I18N_EN, {
 "⚠ aucun chemin trouvé autour de la trace": "⚠ no path found around the track",
 "⚠ réseau indisponible : réessaie plus tard": "⚠ network unavailable: try again later",
 "Pose au moins 2 points.": "Place at least 2 points.",
+"Glisse pour déplacer le panneau (double-clic : position d’origine)": "Drag to move the panel (double-click: original position)",
 });

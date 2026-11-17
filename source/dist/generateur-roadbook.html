@@ -1043,6 +1043,7 @@ body.dragNote .leaflet-tooltip{display:none}
 .gpsoff{font-size:12px;line-height:1.5;margin-top:4px;max-width:360px}.gpsoff input[type=number]{width:52px}.gpsoff button{font-size:12px;padding:3px 8px;cursor:pointer}.gpsoff .gomsg{margin-top:2px;opacity:.85}
 
 .livest { font-size: 12px; color: #6b6558; } .livest.warn { color: #b25a00; }
+#drawBox b.grab{display:block;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}#drawBox b.grab::before{content:"⠿ ";opacity:.55}
 </style>
 </head>
 <body>
@@ -1050,7 +1051,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261117.2005</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261117.2008</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1091,7 +1092,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261117.2005</div>
+          <div class="ver">Version v0.261117.2008</div>
         </div>
       </div>
     </div>
@@ -2911,6 +2912,7 @@ Object.assign(I18N_EN, {
 "⚠ aucun chemin trouvé autour de la trace": "⚠ no path found around the track",
 "⚠ réseau indisponible : réessaie plus tard": "⚠ network unavailable: try again later",
 "Pose au moins 2 points.": "Place at least 2 points.",
+"Glisse pour déplacer le panneau (double-clic : position d’origine)": "Drag to move the panel (double-click: original position)",
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
 // Le texte des notes du roadbook (cases .k3) n'est PAS traduit ici : sa langue sera un réglage séparé (étape 2).
@@ -4483,6 +4485,21 @@ async function routeSeg(a, b, mode) {
   return [a.slice(0, 2), b.slice(0, 2)];
 }
 
+/* ---- panneau dessin déplaçable : on le saisit par son titre (souris ou doigt) ; double-clic sur le titre = position d'origine ---- */
+(function drawBoxDrag() {
+  const box = $('#drawBox'), h = box.querySelector('b'); if (!h) return;
+  h.classList.add('grab'); h.title = 'Glisse pour déplacer le panneau (double-clic : position d’origine)';
+  const clampPos = (l, t) => { const P = box.offsetParent || box.parentElement; return [Math.max(0, Math.min(l, P.clientWidth - 70)), Math.max(0, Math.min(t, P.clientHeight - 36))]; };
+  const put = (l, t) => { box.style.left = l + 'px'; box.style.top = t + 'px'; };
+  try { const p = JSON.parse(localStorage.getItem('rbgen.drawPos') || 'null'); if (p) put(...clampPos(p[0], p[1])); } catch (_) {}
+  let st = null;
+  h.addEventListener('pointerdown', e => { if (e.button) return; st = { x: e.clientX, y: e.clientY, l: box.offsetLeft, t: box.offsetTop }; h.setPointerCapture(e.pointerId); e.preventDefault(); });
+  h.addEventListener('pointermove', e => { if (st) put(...clampPos(st.l + e.clientX - st.x, st.t + e.clientY - st.y)); });
+  const end = () => { if (!st) return; st = null; try { localStorage.setItem('rbgen.drawPos', JSON.stringify([box.offsetLeft, box.offsetTop])); } catch (_) {} };
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  h.addEventListener('dblclick', () => { box.style.left = box.style.top = ''; try { localStorage.removeItem('rbgen.drawPos'); } catch (_) {} });
+  window.addEventListener('resize', () => { if (box.style.left) put(...clampPos(box.offsetLeft, box.offsetTop)); });
+})();
 /* ============================================================
    7. Réseau de chemins OSM (Overpass)
    ============================================================ */

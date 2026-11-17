@@ -1,0 +1,11 @@
+const { chromium } = require('playwright');
+(async () => { const b = await chromium.launch(), pg = await (await b.newContext({ viewport: { width: 1400, height: 820 }, locale: 'fr-FR', hasTouch: false })).newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.goto('file://' + __dirname + '/../../dist/generateur-roadbook.html'); await pg.waitForTimeout(800);
+  await pg.click('#bDraw'); await pg.waitForTimeout(300);
+  const pos = () => pg.evaluate(() => { const b = document.getElementById('drawBox'); return [b.offsetLeft, b.offsetTop]; });
+  const h = await pg.$('#drawBox b'); const r = await h.boundingBox(); console.log('départ', await pos());
+  await pg.mouse.move(r.x + 20, r.y + 8); await pg.mouse.down(); await pg.mouse.move(r.x + 220, r.y + 120, { steps: 6 }); await pg.mouse.up();
+  console.log('après glisser', await pos()); await pg.screenshot({ path: '/tmp/drawmove.png' });
+  await pg.reload(); await pg.waitForTimeout(800); await pg.click('#bDraw'); await pg.waitForTimeout(300); console.log('après rechargement', await pos());
+  await pg.dblclick('#drawBox b'); console.log('après double-clic', await pos());
+  await pg.setViewportSize({ width: 1400, height: 820 }); console.log('erreurs', errs); await b.close(); })();

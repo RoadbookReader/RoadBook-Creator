@@ -409,3 +409,18 @@ async function routeSeg(a, b, mode) {
   return [a.slice(0, 2), b.slice(0, 2)];
 }
 
+/* ---- panneau dessin déplaçable : on le saisit par son titre (souris ou doigt) ; double-clic sur le titre = position d'origine ---- */
+(function drawBoxDrag() {
+  const box = $('#drawBox'), h = box.querySelector('b'); if (!h) return;
+  h.classList.add('grab'); h.title = 'Glisse pour déplacer le panneau (double-clic : position d’origine)';
+  const clampPos = (l, t) => { const P = box.offsetParent || box.parentElement; return [Math.max(0, Math.min(l, P.clientWidth - 70)), Math.max(0, Math.min(t, P.clientHeight - 36))]; };
+  const put = (l, t) => { box.style.left = l + 'px'; box.style.top = t + 'px'; };
+  try { const p = JSON.parse(localStorage.getItem('rbgen.drawPos') || 'null'); if (p) put(...clampPos(p[0], p[1])); } catch (_) {}
+  let st = null;
+  h.addEventListener('pointerdown', e => { if (e.button) return; st = { x: e.clientX, y: e.clientY, l: box.offsetLeft, t: box.offsetTop }; h.setPointerCapture(e.pointerId); e.preventDefault(); });
+  h.addEventListener('pointermove', e => { if (st) put(...clampPos(st.l + e.clientX - st.x, st.t + e.clientY - st.y)); });
+  const end = () => { if (!st) return; st = null; try { localStorage.setItem('rbgen.drawPos', JSON.stringify([box.offsetLeft, box.offsetTop])); } catch (_) {} };
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  h.addEventListener('dblclick', () => { box.style.left = box.style.top = ''; try { localStorage.removeItem('rbgen.drawPos'); } catch (_) {} });
+  window.addEventListener('resize', () => { if (box.style.left) put(...clampPos(box.offsetLeft, box.offsetTop)); });
+})();
