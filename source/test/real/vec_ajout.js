@@ -1,0 +1,13 @@
+const { chromium } = require('playwright'); const { execFileSync } = require('child_process');
+(async () => { const b = await chromium.launch(), pg = await (await b.newContext({ viewport: { width: 1300, height: 800 } })).newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.route(/^https?:/, r => { const u = r.request().url(); if (!/data\.geopf\.fr/.test(u)) return r.abort(); try { const d = execFileSync('curl', ['-s', '--max-time', '25', u], { maxBuffer: 1 << 26 }); r.fulfill({ status: d.length ? 200 : 204, body: d, headers: { 'access-control-allow-origin': '*' } }); } catch (e) { r.abort(); } });
+  await pg.goto('file://' + __dirname + '/../../dist/generateur-roadbook.html'); await pg.waitForTimeout(1000);
+  const add = async (name, url, max) => { await pg.selectOption('#layerSel', '__my'); await pg.fill('#mlName', name); await pg.fill('#mlUrl', url); if (max) await pg.fill('#mlMax', String(max)); await pg.getByRole('button', { name: /Ajouter et afficher|Add and show/ }).click(); await pg.waitForTimeout(400); };
+  await add('bad', 'https://x.org/abc'); console.log('erreur affichée:', /fichier de style|style file/.test(await pg.textContent('body')));
+  await add('Classique', 'https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/classique.json');
+  await add('PBF', 'https://data.geopf.fr/tms/1.0.0/PLAN.IGN/{z}/{x}/{y}.pbf', 18);
+  await pg.waitForTimeout(500);
+  console.log(await pg.evaluate(() => JSON.parse(localStorage.getItem('rbgen.myLayers')).map(l => l.name + ':' + (l.type || 'raster'))));
+  await pg.evaluate(() => window.__rb.map.setView([42.79, 0.59], 13, { animate: false })); await pg.waitForTimeout(9000);
+  await pg.screenshot({ path: '/tmp/vec_pbf.png', clip: { x: 0, y: 60, width: 650, height: 500 } });
+  console.log('erreurs', errs); await b.close(); })();

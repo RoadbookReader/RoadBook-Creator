@@ -162,4 +162,8 @@ Object.assign(I18N_EN, {
 "Largeur du couloir :": "Corridor width:",
 "km de chaque côté": "km on each side",
 "🔎 Chemins non cartographiés": "🔎 Unmapped paths",
+"Les tuiles vectorielles": "Vector tiles",
+"sont acceptées, ainsi qu’un fichier de style": "are accepted, as well as a style file",
+"(MapLibre) qui donne les couleurs.": "(MapLibre) that gives the colours.",
+"L’adresse doit contenir {z}, {x} et {y} (ou être un fichier de style .json).": "The address must contain {z}, {x} and {y} (or be a .json style file).",
 });

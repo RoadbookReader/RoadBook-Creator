@@ -25,7 +25,7 @@ function normTileUrl(u) {
 function layerFor(key) {
   if (LAYERS[key]) return LAYERS[key];
   const c = myLayers.find(l => 'c:' + l.id === key); if (!c) return null;
-  if (!myLayerObjs.has(c.id)) myLayerObjs.set(c.id, L.tileLayer(c.url, { maxNativeZoom: c.max || 18, maxZoom: Math.max(19, c.max || 18), attribution: esc(c.name) }));
+  if (!myLayerObjs.has(c.id)) myLayerObjs.set(c.id, c.type === 'vec' || c.type === 'style' ? vecCustomLayer(c) : L.tileLayer(c.url, { maxNativeZoom: c.max || 18, maxZoom: Math.max(19, c.max || 18), attribution: esc(c.name) }));
   return myLayerObjs.get(c.id);
 }
 const lvl = x => (x == null || x === '' || !isFinite(+x) ? 100 : +x);      // 0 est une valeur valable
@@ -60,15 +60,17 @@ function openMyLayers(pre, err) {
     ${err ? `<div style="color:var(--err);font-weight:600;margin-bottom:8px">${esc(err)}</div>` : ''}
     <div class="fld"><label for="mlName">Nom</label><input id="mlName" type="text" value="${esc(pre.name || '')}" placeholder="ex. IGN SCAN 25"></div>
     <div class="fld"><label for="mlUrl">Adresse des tuiles</label><textarea id="mlUrl" rows="3" placeholder="https://…/{z}/{x}/{y}.png">${esc(pre.url || '')}</textarea></div>
-    <div class="help">Colle l’adresse d’un service de tuiles contenant <b>{z}</b>, <b>{x}</b> et <b>{y}</b> (les formes {$z}, {$x}, {$y} sont aussi acceptées).</div>
+    <div class="help">Colle l’adresse d’un service de tuiles contenant <b>{z}</b>, <b>{x}</b> et <b>{y}</b> (les formes {$z}, {$x}, {$y} sont aussi acceptées). Les tuiles vectorielles <b>.pbf</b> sont acceptées, ainsi qu’un fichier de style <b>.json</b> (MapLibre) qui donne les couleurs.</div>
     <div class="fld" style="max-width:170px"><label for="mlMax">Zoom maxi des tuiles</label><input id="mlMax" type="number" min="1" max="22" value="${pre.max || 18}"></div>`, [
     { label: 'Fermer' }, 'sp',
     { label: 'Ajouter et afficher', cls: 'primary', onClick: () => {
       const name = $('#mlName').value.trim(), url = normTileUrl($('#mlUrl').value), max = clamp(parseInt($('#mlMax').value, 10) || 18, 1, 22);
       const again = e => openMyLayers({ name, url: $('#mlUrl').value, max }, e);
       if (!/^https?:\/\//i.test(url)) return again('L’adresse doit commencer par http:// ou https://');
-      if (!/\{z\}/.test(url) || !/\{x\}/.test(url) || !/\{-?y\}/.test(url)) return again('L’adresse doit contenir {z}, {x} et {y}.');
+      const type = /\.json(\?|#|$)/i.test(url) ? 'style' : /\.(pbf|mvt)(\?|#|$)/i.test(url) ? 'vec' : '';
+      if (type !== 'style' && (!/\{z\}/.test(url) || !/\{x\}/.test(url) || !/\{-?y\}/.test(url))) return again('L’adresse doit contenir {z}, {x} et {y} (ou être un fichier de style .json).');
       const l = { id: Date.now().toString(36), name: name || 'Mon fond ' + (myLayers.length + 1), url, max };
+      if (type) l.type = type;
       myLayers.push(l); saveMyLayers(); rebuildLayerSelect(); setBaseLayer('c:' + l.id);
       toast(`Fond « ${l.name} » ajouté. S’il reste gris, vérifie l’adresse (ou le zoom maxi).`, 'ok');
     } }]);
