@@ -166,4 +166,5 @@ Object.assign(I18N_EN, {
 "sont acceptées, ainsi qu’un fichier de style": "are accepted, as well as a style file",
 "(MapLibre) qui donne les couleurs.": "(MapLibre) that gives the colours.",
 "L’adresse doit contenir {z}, {x} et {y} (ou être un fichier de style .json).": "The address must contain {z}, {x} and {y} (or be a .json style file).",
+"〰️ Courbes de niveau (IGN)": "〰️ Contour lines (IGN)",
 });
