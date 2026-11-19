@@ -105,11 +105,6 @@ async function runGenerate() {
       return;
     }
     const { mm, ratio, jn, bends, rep, fr, manual, all } = R;
-    let parcR = null; parcClear();
-    if (S.settings.parc !== false && parcInFrance(S.ll)) {
-      try { parcR = await parcelCheck(prog, () => cancelGen); parcDraw(parcR); }
-      catch (e) { if (e.message === 'annulé') throw e; genWarn('Parcelles cadastrales indisponibles : passages en parcelles non vérifiés (' + (failReason(e) || 'erreur') + ').'); }
-    }
     closeModal(); renderTrack(); renderAll();
     if (S.notes.length > 1) map.fitBounds(line.getBounds(), { padding: [40, 40] });
     const pc = Math.round(ratio * 100);
@@ -121,7 +116,6 @@ async function runGenerate() {
     let html = rows.map(r => `<p style="margin:0 0 6px">${r}</p>`).join('');
     if (rep && rep.skipped && rep.skipped.length) html += `<details style="margin-top:8px;padding:6px 8px;border-radius:8px;background:rgba(255,140,0,.10)"><summary style="cursor:pointer"><b>${rep.skipped.length}</b> panneau${rep.skipped.length > 1 ? 'x' : ''} / obstacle${rep.skipped.length > 1 ? 's' : ''} repéré${rep.skipped.length > 1 ? 's' : ''} mais écarté${rep.skipped.length > 1 ? 's' : ''} <span style="color:#b8590a;font-weight:600">— clique ici pour dérouler la liste, puis sur un point pour zoomer dessus</span></summary><ul style="margin:4px 0 0 18px;padding:0;font-size:13px">${rep.skipped.slice(0, 80).map(k => `<li${k.lat != null ? ` class="rptgo" data-lat="${k.lat}" data-lon="${k.lon}" title="Voir sur la carte"` : ''}>${k.lat != null ? '📍 ' : ''}km ${(k.s / 1000).toFixed(2).replace('.', ',')} · ${esc(k.text)} — ${esc(k.why)}</li>`).join('')}${rep.skipped.length > 80 ? '<li>…</li>' : ''}</ul></details>`;
     if (GENLOG.length) html += `<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(224,138,0,.14)"><b>À savoir :</b><ul style="margin:4px 0 0 18px;padding:0">${GENLOG.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>`;
-    if (parcR) html += parcHtml(parcR);
     if (pc < 60 && S.settings.tol !== 0) html += `<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(224,138,0,.14)"><b>Parcours peu reconnu.</b> Seulement ${pc} % de ta trace a pu être recalée sur les chemins (trait noir sur la carte) : les intersections ne sont repérées que sur cette partie. Si la trace a été dessinée à main levée, augmente <b>« Écart maxi trace ↔ chemins »</b> dans ⋯ › Réglages (par ex. 70 m), puis régénère.</div>`;
     const rtitle = GENLOG.length || (pc < 60 && S.settings.tol !== 0) ? 'Roadbook généré — rapport (avec avertissements)' : 'Roadbook généré — rapport';
     try { localStorage.setItem('rbgen.report', JSON.stringify({ title: rtitle, html })); } catch (_) { }

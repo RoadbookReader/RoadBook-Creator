@@ -67,7 +67,6 @@ function openSettings() {
       <b>Détaillé</b> : en plus clôtures, STOP, sable / boue, état de la piste, pentes, châteaux d’eau, antennes… mais téléchargement bien plus long.</div></details></div>
     ${num('sTol', 'Écart maxi trace ↔ chemins (m)', s.tol, 0, 100, 'Ta trace est recalée sur les chemins situés à moins de cette distance. Augmente-la si ta trace est dessinée à main levée. Mets 0 pour ne pas recaler : la trace est gardée telle quelle.')}
     ${chk('sFoot', 'Inclure les voies piétonnes et cyclables (footway, cycleway, escaliers)', s.foot)}
-    ${chk('sParc', 'Vérifier les passages dans des parcelles cadastrales (France, indice de chemin privé)', s.parc !== false)}
     </details>
     <details class="setsec" open><summary>📝 Quelles notes créer <span class="setbadge">↻ à régénérer</span></summary>
 ${num('sMerge', 'Regrouper les notes à moins de (m)', s.merge, 5, 100)}
@@ -112,7 +111,7 @@ ${num('sR', 'Rayon dessiné dans la tulipe (m)', s.tulipR, 25, 120)}
       const same = o => JSON.stringify(Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {}));      // comparaison sans tenir compte de l'ordre des champs
       const before = same({ ...S.settings, routeExt: 0, symAuto: 0, showDir: 0, showRoad: 0, showRO: 0, showPI: 0, showTR: 0, showCap: 0, capMode: 0, noteLang: 0, arrows: 0 });
       S.settings = { sv: DEF_SETTINGS.sv, data: /^(osm|ign|ignd)$/.test($('#sData').value) ? $('#sData').value : 'vt', dataN: /^(osm|ign|vt)$/.test($('#sDataN').value) && $('#sDataN').value !== ($('#sData').value || 'vt') ? $('#sDataN').value : '', tol: g('sTol', 0, 0, 100), water: $('#sWater').checked, bld: $('#sBld').checked, pois: $('#sPois').checked, landmarks: $('#sLand').checked, merge: g('sMerge', 30, 5, 100), tulipR: g('sR', 50, 25, 120), straight: $('#sStraight').checked, mixY: $('#sMixY').checked, mixT: $('#sMixT').checked,
-        followLvl: +$('#sFollow').value, parc: $('#sParc').checked, lmOff: [...document.querySelectorAll('.lmchk')].filter(c => !c.checked).map(c => c.dataset.lm), goudron: $('#sGoudron').checked, bends: $('#sBends').checked, offroad: $('#sOffroad').checked, bendAngle: g('sBendA', 100, 60, 170), foot: $('#sFoot').checked, routeExt: $('#sExt').checked, symAuto: $('#sSym').checked, showDir: $('#sDir').checked, showRoad: $('#sRoad').checked, showRO: $('#sRO').checked, showPI: $('#sPI').checked, showTR: $('#sTR').checked, capMode: $('#sCapMode').value, showCap: $('#sCapMode').value === 'all' };
+        followLvl: +$('#sFollow').value, lmOff: [...document.querySelectorAll('.lmchk')].filter(c => !c.checked).map(c => c.dataset.lm), goudron: $('#sGoudron').checked, bends: $('#sBends').checked, offroad: $('#sOffroad').checked, bendAngle: g('sBendA', 100, 60, 170), foot: $('#sFoot').checked, routeExt: $('#sExt').checked, symAuto: $('#sSym').checked, showDir: $('#sDir').checked, showRoad: $('#sRoad').checked, showRO: $('#sRO').checked, showPI: $('#sPI').checked, showTR: $('#sTR').checked, capMode: $('#sCapMode').value, showCap: $('#sCapMode').value === 'all' };
       applyCapMode();
       afterSettings(before === same({ ...S.settings, routeExt: 0, symAuto: 0, showDir: 0, showRoad: 0, showRO: 0, showPI: 0, showTR: 0, showCap: 0, capMode: 0, noteLang: 0, arrows: 0 }));
     } }]);
