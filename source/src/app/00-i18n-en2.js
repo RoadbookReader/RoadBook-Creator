@@ -198,4 +198,6 @@ Object.assign(I18N_EN, {
   'Les tulipes viennent de la source des chemins ci-dessus ; les textes de la 3e case peuvent venir d’une autre source (même choix que dans « Générer le roadbook »).': 'Tulips come from the paths source above; the 3rd box texts can come from another source (same choice as in “Generate the roadbook”).',
   'BD TOPO détaillé (IGN)': 'Detailed BD TOPO (IGN)',
   'Avec les repères, France seulement': 'With landmarks, France only',
+  '🏘️ Parcelles cadastrales (IGN) — hors parcelle = chemin public': '🏘️ Cadastral parcels (IGN) — outside a parcel = public path',
+  'Parcelles cadastrales (IGN)': 'Cadastral parcels (IGN)',
 });

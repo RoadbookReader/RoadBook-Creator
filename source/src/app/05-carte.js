@@ -101,6 +101,7 @@ const HEAT = {
   ombrage: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.SHADOW&STYLE=estompage_grayscale', { maxNativeZoom: 15, maxZoom: 19, zIndex: 5, className: 'mult', attribution: '© IGN – Estompage' }),
   pentes: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN&STYLE=normal', { maxNativeZoom: 17, maxZoom: 19, zIndex: 5, opacity: 0.6, attribution: '© IGN – Pentes' }),
   courbes: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=ELEVATION.CONTOUR.LINE&STYLE=normal', { maxNativeZoom: 18, maxZoom: 19, zIndex: 5, attribution: '© IGN – Courbes de niveau' }),
+  cadastre: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=CADASTRALPARCELS.PARCELS&STYLE=normal', { maxNativeZoom: 19, maxZoom: 19, zIndex: 5, attribution: '© IGN / DGFiP – Parcelles cadastrales' }),
   onf: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=FORETS.PUBLIQUES&STYLE=FORETS%20PUBLIQUES%20ONF', { maxNativeZoom: 16, maxZoom: 19, zIndex: 5, opacity: 0.8, attribution: '© IGN / ONF – Forêts publiques' }),
   prsf: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=PROTECTEDAREAS.PRSF&STYLE=POINT%20RENCONTRE%20SECOURS%20FORET', { maxNativeZoom: 17, maxZoom: 19, zIndex: 6, attribution: '© IGN / ONF – Points de secours en forêt' }),
   porteur: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-PORTEUR&STYLE=normal', { maxNativeZoom: 17, maxZoom: 19, zIndex: 5, opacity: 0.8, attribution: '© IGN – Accessibilité des forêts (portage)' }),
@@ -112,7 +113,7 @@ const HEAT = {
   gpsoff: gpsOffLayer      // traces GPS OSM hors route, calculées à la demande (04b-heat-gps.js)
 };
 let curHeat = '';
-const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, courbes: 1, lidar: 1, ombrage: 1, prsf: 1 };
+const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, courbes: 1, cadastre: 1, lidar: 1, ombrage: 1, prsf: 1 };
 let heatLevel = {}; try { heatLevel = JSON.parse(localStorage.getItem('rbgen.heatLevel') || '{}') || {}; } catch (_) {}
 /* Curseur d'intensité : 0 % à 100 % = atténuation (transparence) */
 function applyHeatLevel() {
