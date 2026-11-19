@@ -251,7 +251,7 @@ Object.assign(IGN_PROPS, {      // couches de repères (mode IGN détaillé) : c
 let ignLite = true;                                          // passe à false si le service refuse la liste d'attributs (on redemande alors tout)
 async function ignQueryRetry(layer, box, isCancelled) {      // le service IGN a parfois des coups de fatigue (page technique au lieu des données) : on réessaie plusieurs fois, en attendant de plus en plus
   let last = null;
-  for (let t = 0; t < 4; t++) {
+  for (let t = 0; t < (/troncon_de_route/.test(layer) ? 4 : 1); t++) {      // eau et bâtiments : un seul tour (facultatifs), les routes : 4
     try { return await ignQuery(layer, box, isCancelled); }
     catch (e) { if (/annulé/.test(e.message || '') || isCancelled()) throw e; last = e; console.warn('BD TOPO : nouvel essai', layer, e); await sleep(5000 * (t + 1)); }
   }
@@ -265,8 +265,8 @@ async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'un
       BBOX: `${box[0].toFixed(5)},${box[1].toFixed(5)},${box[2].toFixed(5)},${box[3].toFixed(5)},urn:ogc:def:crs:EPSG::4326`, SORTBY: 'cleabs', COUNT: PG, STARTINDEX: page * PG,
       ...(ignLite && IGN_PROPS[layer] ? { PROPERTYNAME: IGN_PROPS[layer] } : {}) });
     let j = null, err = null;
-    for (let t = 0; t < 4 && !j; t++) {                       // le service répond parfois 503 ou 429 (trop de demandes) : on réessaie en attendant de plus en plus
-      try { j = await fetchJSON(IGN_WFS + '?' + mk(), {}, 90000); }
+    for (let t = 0; t < (/troncon_de_route/.test(layer) ? 4 : 2) && !j; t++) {                       // le service répond parfois 503 ou 429 (trop de demandes) : on réessaie en attendant de plus en plus
+      try { j = await fetchJSON(IGN_WFS + '?' + mk(), {}, /troncon_de_route/.test(layer) ? 45000 : 25000); }
       catch (e) {
         err = e; if (isCancelled()) throw new Error('annulé');
         if (e.status === 400 && ignLite) { ignLite = false; t--; continue; }      // liste d'attributs refusée : on la retire et on recommence
