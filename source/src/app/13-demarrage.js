@@ -575,6 +575,7 @@ $('#magMax').onchange = e => { S.magMax = +e.target.value; updSnapBtn(); save();
 $('#routeMode').onchange = e => { S.routeMode = e.target.value; if (S.routeMode !== 'line') { S.prevRoute = S.routeMode; S.snapOn = true; } updSnapBtn(); save(); if (/^ors:/.test(S.routeMode) && !orsKey()) orsDialog(); };
 $('#orsBtn').onclick = orsDialog;
 $('#bGen').onclick = generate;
+$('#bRep').onclick = () => document.querySelector('[data-act=report]').click();
 $('#bSave').onclick = saveProject;
 $('#bUndo').onclick = () => { if (drawing) undo(); else undoAll(); };
 $('#bExport').onclick = exportGPX;

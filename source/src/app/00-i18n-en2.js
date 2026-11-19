@@ -201,4 +201,6 @@ Object.assign(I18N_EN, {
   '🏘️ Parcelles cadastrales (IGN) — hors parcelle = chemin public': '🏘️ Cadastral parcels (IGN) — outside a parcel = public path',
   'Parcelles cadastrales (IGN)': 'Cadastral parcels (IGN)',
   'Vérifier les passages dans des parcelles cadastrales (France, indice de chemin privé)': 'Check passages inside cadastral parcels (France, private-path hint)',
+  'Rapport': 'Report',
+  'Rouvrir le rapport de la dernière génération (avertissements, parcelles…)': 'Reopen the report of the last generation (warnings, parcels…)',
 });
