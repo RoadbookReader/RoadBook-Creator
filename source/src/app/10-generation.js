@@ -104,7 +104,7 @@ async function runGenerate() {
         + `<div class="help" style="margin-top:12px">Détail technique : ${esc(G.diag || '')}</div>`, [{ label: 'OK', cls: 'primary' }]);
       return;
     }
-    const { mm, ratio, jn, bends, rep, fr, manual, all } = R;
+    const { mm, ratio, jn, bends, rep, fr, manual, all } = R; REP_SKIPPED = (rep && rep.skipped) || [];
     let parcR = null; parcClear();
     if (S.settings.parc !== false && parcInFrance(S.ll)) {
       try { parcR = await parcelCheck(prog, () => cancelGen); parcDraw(parcR); }

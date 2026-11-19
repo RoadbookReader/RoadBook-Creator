@@ -543,9 +543,4 @@ window.addEventListener('mouseup', () => { if (pendingIns && !stroke) { pendingI
 }
 
 /* ---------- Clic droit (ou appui long) sur la carte : ouvrir cet endroit dans Google Street View ---------- */
-map.on('contextmenu', e => {
-  const la = e.latlng.lat.toFixed(6), lo = e.latlng.lng.toFixed(6);
-  const url = `https://www.google.com/maps?q=&layer=c&cbll=${la},${lo}`;      // cbll : Google cale sur le panorama le plus proche (le lien « pano/viewpoint » donnait un écran noir)
-  L.popup({ closeButton: false, className: 'svpop', offset: [0, 4] }).setLatLng(e.latlng)
-    .setContent(`<a class="svlnk" href="${url}" target="_blank" rel="noopener">👁 Ouvrir dans Google Street View</a><div class="svco">${la}, ${lo}</div>`).openOn(map);
-});
+map.on('contextmenu', e => rightClickMenu(e.latlng));

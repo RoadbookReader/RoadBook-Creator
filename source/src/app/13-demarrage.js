@@ -198,7 +198,7 @@ function snapDialog() {
 }
 /* ---- étape 3 : étapes, GPX multi-traces, marqueurs ---- */
 const MARK_ICONS = [['refuge', '🏠', 'Refuge'], ['water', '💧', 'Eau'], ['fuel', '⛽', 'Carburant'], ['food', '🍴', 'Repas'], ['bed', '⛺', 'Bivouac'],
-  ['danger', '⚠️', 'Danger'], ['photo', '📷', 'Photo'], ['parking', '🅿️', 'Parking'], ['view', '⛰️', 'Point de vue'], ['pin', '📍', 'Repère']];
+  ['danger', '⚠️', 'Danger'], ['photo', '📷', 'Photo'], ['parking', '🅿️', 'Parking'], ['view', '⛰️', 'Point de vue'], ['shop', '🛒', 'Magasin'], ['health', '⚕️', 'Santé'], ['wc', '🚻', 'Toilettes'], ['pin', '📍', 'Repère']];
 const anyLock = () => (S.stages || []).some(g => g.lock);
 let stagePick = false, markPick = false;
 function pickClick(latlng) {
@@ -599,6 +599,7 @@ $('#moreMenu').addEventListener('click', e => {
   if (act === 'settings') openSettings();
   else if (act === 'stages') stagesDialog();
   else if (act === 'marks') marksDialog();
+  else if (act === 'poi') poiDialog();
   else if (act === 'ctl') controlDialog();
   else if (act === 'alt') altDialog();
   else if (act === 'meas') openMeasure();
