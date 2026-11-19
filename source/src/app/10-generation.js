@@ -108,7 +108,7 @@ async function runGenerate() {
     let parcR = null; parcClear();
     if (S.settings.parc !== false && parcInFrance(S.ll)) {
       try { parcR = await parcelCheck(prog, () => cancelGen); parcDraw(parcR); }
-      catch (e) { if (e.message === 'annulé') throw e; genWarn('Parcelles cadastrales indisponibles : passages en parcelles non vérifiés (' + (e.message || 'erreur') + ').'); }
+      catch (e) { if (e.message === 'annulé') throw e; genWarn('Parcelles cadastrales indisponibles : passages en parcelles non vérifiés (' + (failReason(e) || 'erreur') + ').'); }
     }
     closeModal(); renderTrack(); renderAll();
     if (S.notes.length > 1) map.fitBounds(line.getBounds(), { padding: [40, 40] });

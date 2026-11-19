@@ -1051,7 +1051,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261119.1814</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261119.1858</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1093,7 +1093,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261119.1814 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261119.1858 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -4717,6 +4717,7 @@ function failReason(e) {                 // raison courte et lisible d'un échec
   if (e && e.name === 'AbortError') return 'délai dépassé';
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'pas de réponse du serveur (réseau, blocage ou refus du navigateur)';
   if (/^HTTP (\d+)/.test(m)) return 'le serveur répond ' + m;
+  if (/not valid JSON|Unexpected token|Unexpected end of JSON/i.test(m)) return 'réponse inattendue du serveur (service momentanément surchargé ou en panne)';
   return m.slice(0, 90);
 }
 async function fetchOSM(progress, isCancelled) {      // mode rapide (fond vectoriel) par défaut ; IGN ou détaillé au choix ; les autres en secours
@@ -4770,6 +4771,14 @@ Object.assign(IGN_PROPS, {      // couches de repères (mode IGN détaillé) : c
   'BDTOPO_V3:detail_orographique': 'geometrie,cleabs,nature,toponyme', 'BDTOPO_V3:reservoir': 'geometrie,cleabs,nature,etat_de_l_objet',
   'BDTOPO_V3:construction_ponctuelle': 'geometrie,cleabs,nature,toponyme,etat_de_l_objet', 'BDTOPO_V3:zone_d_activite_ou_d_interet': 'geometrie,cleabs,categorie,nature,toponyme,etat_de_l_objet' });
 let ignLite = true;                                          // passe à false si le service refuse la liste d'attributs (on redemande alors tout)
+async function ignQueryRetry(layer, box, isCancelled) {      // le service IGN a parfois des coups de fatigue (page technique au lieu des données) : on réessaie plusieurs fois, en attendant de plus en plus
+  let last = null;
+  for (let t = 0; t < 4; t++) {
+    try { return await ignQuery(layer, box, isCancelled); }
+    catch (e) { if (/annulé/.test(e.message || '') || isCancelled()) throw e; last = e; console.warn('BD TOPO : nouvel essai', layer, e); await sleep(5000 * (t + 1)); }
+  }
+  throw last;
+}
 async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'une couche sur un rectangle
   const out = [], PG = /batiment/.test(layer) ? 1500 : IGN_PAGE;      // pages plus petites pour les bâtiments (réponses lourdes)
   for (let page = 0; page < 60; page++) {
@@ -4874,7 +4883,7 @@ async function fetchIGN(progress, isCancelled, detail) {
           let feats;
           const lab = j.l === 'b' ? 'bâtiments' : 'eau';
           if (j.l !== 'r' && skipped.has(lab)) feats = [];                       // cette couche a déjà échoué : on ne perd pas de temps
-          else try { feats = await ignQuery(j.name, box, () => isCancelled() || !!fail); }
+          else try { feats = await ignQueryRetry(j.name, box, () => isCancelled() || !!fail); }
           catch (e) { if (j.l === 'r' || /annulé/.test(e.message || '')) throw e; skipped.add(lab); console.warn('Couche IGN ignorée', j.name, e); feats = []; }     // eau et bâtiments sont facultatifs : seules les routes comptent
           for (const f of feats) {
             const s = ignSlim(j.l, f); if (!s) continue;
@@ -7104,7 +7113,7 @@ async function runGenerate() {
     let parcR = null; parcClear();
     if (S.settings.parc !== false && parcInFrance(S.ll)) {
       try { parcR = await parcelCheck(prog, () => cancelGen); parcDraw(parcR); }
-      catch (e) { if (e.message === 'annulé') throw e; genWarn('Parcelles cadastrales indisponibles : passages en parcelles non vérifiés (' + (e.message || 'erreur') + ').'); }
+      catch (e) { if (e.message === 'annulé') throw e; genWarn('Parcelles cadastrales indisponibles : passages en parcelles non vérifiés (' + (failReason(e) || 'erreur') + ').'); }
     }
     closeModal(); renderTrack(); renderAll();
     if (S.notes.length > 1) map.fitBounds(line.getBounds(), { padding: [40, 40] });
@@ -7193,6 +7202,14 @@ async function parcQuery(box, isCancelled) {
   }
   return out;
 }
+async function parcQueryRetry(box, isCancelled) {      // le service IGN a parfois des coups de fatigue : on réessaie plusieurs fois, en attendant de plus en plus
+  let last = null;
+  for (let t = 0; t < 4; t++) {
+    try { return await parcQuery(box, isCancelled); }
+    catch (e) { if (/annulé/.test(e.message || '') || isCancelled()) throw e; last = e; console.warn('Cadastre : nouvel essai', e); await sleep(5000 * (t + 1)); }
+  }
+  throw last;
+}
 function parcSamples() {      // un point tous les PARC_STEP m le long de la trace : [{s, lat, lon}]
   const ll = S.ll, out = []; let s = 0, next = 0;
   for (let i = 1; i < ll.length; i++) {
@@ -7209,7 +7226,7 @@ async function parcelCheck(prog, isCancelled) {      // → { passages:[{s0,s1,l
   const rects = ignRects([...cells]), feats = []; let n = 0;
   for (const [x0, x1, y] of rects) {
     prog && prog('Parcelles cadastrales…', n++ / rects.length); await sleep(0);
-    feats.push(...await parcQuery([y * PARC_CELL, x0 * PARC_CELL, (y + 1) * PARC_CELL, (x1 + 1) * PARC_CELL], isCancelled));
+    feats.push(...await parcQueryRetry([y * PARC_CELL, x0 * PARC_CELL, (y + 1) * PARC_CELL, (x1 + 1) * PARC_CELL], isCancelled));
   }
   const lat0 = sm[0].lat, kx = 111320 * Math.cos(lat0 * D2R), ky = 110540;
   const xy = c => [c[0] * kx, c[1] * ky];      // c = [lon, lat]

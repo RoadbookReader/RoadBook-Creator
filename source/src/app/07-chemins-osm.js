@@ -195,6 +195,7 @@ function failReason(e) {                 // raison courte et lisible d'un échec
   if (e && e.name === 'AbortError') return 'délai dépassé';
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'pas de réponse du serveur (réseau, blocage ou refus du navigateur)';
   if (/^HTTP (\d+)/.test(m)) return 'le serveur répond ' + m;
+  if (/not valid JSON|Unexpected token|Unexpected end of JSON/i.test(m)) return 'réponse inattendue du serveur (service momentanément surchargé ou en panne)';
   return m.slice(0, 90);
 }
 async function fetchOSM(progress, isCancelled) {      // mode rapide (fond vectoriel) par défaut ; IGN ou détaillé au choix ; les autres en secours
@@ -248,6 +249,14 @@ Object.assign(IGN_PROPS, {      // couches de repères (mode IGN détaillé) : c
   'BDTOPO_V3:detail_orographique': 'geometrie,cleabs,nature,toponyme', 'BDTOPO_V3:reservoir': 'geometrie,cleabs,nature,etat_de_l_objet',
   'BDTOPO_V3:construction_ponctuelle': 'geometrie,cleabs,nature,toponyme,etat_de_l_objet', 'BDTOPO_V3:zone_d_activite_ou_d_interet': 'geometrie,cleabs,categorie,nature,toponyme,etat_de_l_objet' });
 let ignLite = true;                                          // passe à false si le service refuse la liste d'attributs (on redemande alors tout)
+async function ignQueryRetry(layer, box, isCancelled) {      // le service IGN a parfois des coups de fatigue (page technique au lieu des données) : on réessaie plusieurs fois, en attendant de plus en plus
+  let last = null;
+  for (let t = 0; t < 4; t++) {
+    try { return await ignQuery(layer, box, isCancelled); }
+    catch (e) { if (/annulé/.test(e.message || '') || isCancelled()) throw e; last = e; console.warn('BD TOPO : nouvel essai', layer, e); await sleep(5000 * (t + 1)); }
+  }
+  throw last;
+}
 async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'une couche sur un rectangle
   const out = [], PG = /batiment/.test(layer) ? 1500 : IGN_PAGE;      // pages plus petites pour les bâtiments (réponses lourdes)
   for (let page = 0; page < 60; page++) {
@@ -352,7 +361,7 @@ async function fetchIGN(progress, isCancelled, detail) {
           let feats;
           const lab = j.l === 'b' ? 'bâtiments' : 'eau';
           if (j.l !== 'r' && skipped.has(lab)) feats = [];                       // cette couche a déjà échoué : on ne perd pas de temps
-          else try { feats = await ignQuery(j.name, box, () => isCancelled() || !!fail); }
+          else try { feats = await ignQueryRetry(j.name, box, () => isCancelled() || !!fail); }
           catch (e) { if (j.l === 'r' || /annulé/.test(e.message || '')) throw e; skipped.add(lab); console.warn('Couche IGN ignorée', j.name, e); feats = []; }     // eau et bâtiments sont facultatifs : seules les routes comptent
           for (const f of feats) {
             const s = ignSlim(j.l, f); if (!s) continue;

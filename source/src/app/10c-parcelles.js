@@ -21,6 +21,14 @@ async function parcQuery(box, isCancelled) {
   }
   return out;
 }
+async function parcQueryRetry(box, isCancelled) {      // le service IGN a parfois des coups de fatigue : on réessaie plusieurs fois, en attendant de plus en plus
+  let last = null;
+  for (let t = 0; t < 4; t++) {
+    try { return await parcQuery(box, isCancelled); }
+    catch (e) { if (/annulé/.test(e.message || '') || isCancelled()) throw e; last = e; console.warn('Cadastre : nouvel essai', e); await sleep(5000 * (t + 1)); }
+  }
+  throw last;
+}
 function parcSamples() {      // un point tous les PARC_STEP m le long de la trace : [{s, lat, lon}]
   const ll = S.ll, out = []; let s = 0, next = 0;
   for (let i = 1; i < ll.length; i++) {
@@ -37,7 +45,7 @@ async function parcelCheck(prog, isCancelled) {      // → { passages:[{s0,s1,l
   const rects = ignRects([...cells]), feats = []; let n = 0;
   for (const [x0, x1, y] of rects) {
     prog && prog('Parcelles cadastrales…', n++ / rects.length); await sleep(0);
-    feats.push(...await parcQuery([y * PARC_CELL, x0 * PARC_CELL, (y + 1) * PARC_CELL, (x1 + 1) * PARC_CELL], isCancelled));
+    feats.push(...await parcQueryRetry([y * PARC_CELL, x0 * PARC_CELL, (y + 1) * PARC_CELL, (x1 + 1) * PARC_CELL], isCancelled));
   }
   const lat0 = sm[0].lat, kx = 111320 * Math.cos(lat0 * D2R), ky = 110540;
   const xy = c => [c[0] * kx, c[1] * ky];      // c = [lon, lat]
