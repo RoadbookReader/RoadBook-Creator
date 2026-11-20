@@ -69,13 +69,13 @@ async function buildGPX(onProg, mode) {
     let speed = null;
     if (n.wp) {
       const t = n.wp.type;
-      if (t === 'dn') ex.push(`<openrally:dn${attrs(n.wp.open || 1000, n.wp.clear || 90)}/>`, `<openrally:neutralization>${Math.max(0, Math.round((n.wp.dur || 0) * 60))}</openrally:neutralization>`);
+      if (t === 'dn') ex.push(`<openrally:dn${attrs(n.wp.open || 1000, n.wp.clear || 90, (n.wp.name || '').trim())}/>`, `<openrally:neutralization>${Math.max(0, Math.round((n.wp.dur || 0) * 60))}</openrally:neutralization>`);
       else if (isRadiusWP(t)) {
         if (isNumberedWP(t)) wpCount++;
         ex.push(`<openrally:${t === 'cp' ? 'checkpoint' : t}${attrs(n.wp.open || WP_DEF[t][0], n.wp.clear || WP_DEF[t][1], n.wp.name || (isNumberedWP(t) ? String(wpCount) : ''))}/>`);
       }
       if (t === 'ch') {      // CH : marqueur « checkpoint » vide (aucun rayon) ; le temps limite de la liaison part de ce CH jusqu'au contrôle horaire suivant
-        ex.push('<openrally:checkpoint/>');
+        ex.push(`<openrally:checkpoint${attrs(0, 0, (n.wp.name || '').trim())}/>`);
         if (n.wp.limit > 0) ex.push(`<openrally:timecontrol allowed="${Math.round(n.wp.limit)}"/>`);
       }
       if ((t === 'dt' || t === 'dss') && n.wp.limit > 0) ex.push(`<openrally:timecontrol allowed="${Math.round(n.wp.limit)}"/>`);      // temps limite (minutes) d'un DT / DSS, à côté de <openrally:dt/> ou <openrally:dss/>
@@ -88,7 +88,7 @@ async function buildGPX(onProg, mode) {
     }
     if (speed) ex.push(`<openrally:speed>${speed}</openrally:speed>`);
     if (n.fuel) ex.push('<openrally:fuel/>');
-    o.push(`  <wpt lat="${n.lat.toFixed(6)}" lon="${n.lon.toFixed(6)}">\n    <name>${i + 1}${n.wp && (n.wp.name || '').trim() ? xmlEsc(' – ' + n.wp.name.trim()) : ''}</name>\n    <desc>${xmlEsc((n.text || '').replace(/\n/g, ' / '))}</desc>\n    <extensions>\n      ${ex.join('\n      ')}\n    </extensions>\n  </wpt>`);
+    o.push(`  <wpt lat="${n.lat.toFixed(6)}" lon="${n.lon.toFixed(6)}">\n    <name>${i + 1}</name>\n    <desc>${xmlEsc((n.text || '').replace(/\n/g, ' / '))}</desc>\n    <extensions>\n      ${ex.join('\n      ')}\n    </extensions>\n  </wpt>`);
   }
   if (S.settings.marksExport !== false && mode !== 'orient') for (const m of S.marks || []) {
     const ic = MARK_ICONS.find(x => x[0] === m.icon) || MARK_ICONS[MARK_ICONS.length - 1];
