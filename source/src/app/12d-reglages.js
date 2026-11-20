@@ -21,9 +21,10 @@ function prefsImport(file) {
 function prefsDialog() {
   const m = openModal('Mes réglages', `<p>Enregistre dans un petit fichier tes fonds de carte et couches personnels, le fond et la couche affichés, leurs niveaux, le thème, la langue, les rayons et ta clé OpenRoute éventuelle. Utile pour changer de navigateur ou d’appareil, ou si le navigateur vide ses données.</p>
     <p class="help">Le projet en cours (trace, notes) n’en fait pas partie : il a son propre bouton « Enregistrer le projet ». Le fichier contient ta clé OpenRoute si tu en as une : ne le partage pas.</p>
-    <input type="file" id="prefFile" accept=".json,application/json" style="display:none">`,
+    <input type="file" id="prefFile" accept=".json,application/json" style="display:none">${asBlockHtml()}`,
     [{ label: 'Fermer' }, 'sp',
      { label: '📥 Restaurer depuis un fichier', keep: true, onClick: () => document.getElementById('prefFile').click() },
      { label: '💾 Enregistrer mes réglages', cls: 'primary', onClick: () => prefsExport() }]);
+  asBind(m);
   m.querySelector('#prefFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) prefsImport(f); });
 }

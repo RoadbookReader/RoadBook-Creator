@@ -1,0 +1,13 @@
+const { chromium } = require('playwright'); const fs = require('fs'), path = require('path'); const { execFile } = require('child_process');
+const gpx = fs.readdirSync('/mnt/user-data/uploads').filter(f => /TOURANGELLE/.test(f)).map(f => '/mnt/user-data/uploads/' + f)[0];
+const curl = u => new Promise(res => execFile('curl', ['-s', '--max-time', '100', u], { maxBuffer: 1 << 29, encoding: 'buffer' }, (e, out) => res(out)));
+(async () => { const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1000, height: 900 }, locale: 'fr-FR' }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message)); let n = 0;
+  await p.route(/^https?:/, async r => { const u = r.request().url(); if (!/data\.geopf\.fr\/wfs/.test(u)) return r.abort(); n++; const out = await curl(u); r.fulfill({ status: out.length ? 200 : 504, body: out, headers: { 'access-control-allow-origin': '*' } }); });
+  await p.goto('file://' + path.join(__dirname, '..', '..', 'dist', 'generateur-roadbook.html')); await p.evaluate(() => indexedDB.deleteDatabase('rbgen-osm')); await p.reload(); await p.waitForTimeout(500);
+  await p.evaluate(t => window.__rb.loadText(t, 't.gpx'), fs.readFileSync(gpx, 'utf8')); await p.waitForTimeout(800);
+  const start = async () => { await p.click('#bGen'); await p.waitForTimeout(300); await p.selectOption('#gsT', 'ign'); await p.selectOption('#gsN', 'ign'); await p.click('#modal .mbtn.primary'); };
+  await start(); await p.waitForTimeout(25000); const txt1 = await p.innerText('#modal'); console.log('avant annulation :', txt1.replace(/\n/g, ' ').slice(0, 120), 'req', n);
+  await p.click('#modal >> text=Annuler'); await p.waitForTimeout(3000);
+  const cnt = await p.evaluate(() => new Promise(res => { const r = indexedDB.open('rbgen-osm'); r.onsuccess = () => { const q = r.result.transaction('ign').objectStore('ign').count(); q.onsuccess = () => res(q.result); }; })); console.log('cases gardées dans le navigateur :', cnt);
+  n = 0; await p.reload(); await p.waitForTimeout(500); await p.evaluate(t => window.__rb.loadText(t, 't.gpx'), fs.readFileSync(gpx, 'utf8')); await p.waitForTimeout(800);
+  await start(); await p.waitForTimeout(4000); console.log('2e essai :', (await p.innerText('#modal')).replace(/\n/g, ' ').slice(0, 140), 'req', n); console.log('erreurs', errs.join('|') || 0); await b.close(); })();

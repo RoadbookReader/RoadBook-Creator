@@ -350,7 +350,7 @@ async function fetchIGN(progress, isCancelled, detail) {
   if (missing.length) {
     const rects = ignRects(missing);
     const layers = Object.entries(IGN_LAYERS).filter(([l]) => l === 'r' || (l === 'b' ? S.settings.bld : S.settings.water));
-    const jobs = []; for (const r of rects) for (const [l, name] of layers) jobs.push({ r, l, name });
+    const jobs = [], left = rects.map(() => layers.length); rects.forEach((r, ri) => { for (const [l, name] of layers) jobs.push({ r, ri, l, name }); });
     const byCell = new Map(missing.map(k => [k, { k, t: Date.now(), f: [] }]));
     let next = 0, done = 0, fail = null; const skipped = new Set(); skippedLayers = skipped;
     progress(0, `Téléchargement de la BD TOPO (IGN)… 0/${jobs.length}${memo}`);
@@ -369,6 +369,10 @@ async function fetchIGN(progress, isCancelled, detail) {
             for (const line of pts) for (const p of line) hit.add(Math.floor(p[1] / IGN_TS) + ',' + Math.floor(p[0] / IGN_TS));
             let placed = false; for (const k of hit) { const c = byCell.get(k); if (c) { c.f.push(s); placed = true; } }
             if (!placed) byCell.get(j.r[0] + ',' + j.r[2]).f.push(s);
+          }
+          if (--left[j.ri] === 0) {      // toutes les couches de ce rectangle sont reçues : on le garde tout de suite (reprise possible si la suite échoue)
+            const part = []; for (let x = j.r[0]; x <= j.r[1]; x++) { const c = byCell.get(x + ',' + j.r[2]); if (c) part.push(c); }
+            for (const c of part) memIGN.set(c.k, c); TileDB.putMany(part, 'ign');
           }
         } catch (e) { fail = fail || e; }
         done++; progress(done / jobs.length, `Téléchargement de la BD TOPO (IGN)… ${done}/${jobs.length}${memo}`);
@@ -434,7 +438,7 @@ async function fetchVT(progress, isCancelled) {
   const worker = async () => {
     while (!fail && next < missing.length) {
       const k = missing[next++];
-      try { const d = await getVTile(k, () => isCancelled() || !!fail); data.set(k, d); got.push({ k, t: Date.now(), d }); } catch (e) { fail = fail || e; }
+      try { const d = await getVTile(k, () => isCancelled() || !!fail); data.set(k, d); got.push({ k, t: Date.now(), d }); if (d && d.length) { memVT.set(k, d); TileDB.putMany([{ k, t: Date.now(), d }], 'vt'); } } catch (e) { fail = fail || e; }
       done++; progress(done / missing.length, `Chargement du fond vectoriel… ${done}/${missing.length}${memo}`);
     }
   };
@@ -474,7 +478,8 @@ async function fetchOverpass(progress, isCancelled) {
         try {
           const j = await overpass(osmQuery(b), () => isCancelled() || !!fail, w + pass, servers);
           eps.add(j.__ep);
-          for (const r of attribute(j, b)) { recs.set(r.k, r); fetched.push(r); }
+          const rs = attribute(j, b); for (const r of rs) { recs.set(r.k, r); fetched.push(r); }
+          if (rs.some(r => r.w.length)) { for (const r of rs) memTiles.set(r.k, r); TileDB.putMany(rs); }      // gardé tout de suite : si un lot suivant échoue, celui-ci ne sera pas retéléchargé
         } catch (e) { fail = fail || e; }
         done++; progress(done / batches.length, `Téléchargement des chemins OpenStreetMap… ${done}/${batches.length}${memo}`);
       }

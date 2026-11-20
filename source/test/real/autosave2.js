@@ -1,0 +1,11 @@
+const { chromium } = require('playwright'); const path = require('path');
+(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1000, height: 900 }, locale: 'fr-FR' })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.addInitScript(() => { const files = { 'reglages-roadbook.json': JSON.stringify({ app: 'rbgen-prefs', v: 1, data: { 'rbgen.theme': 'du-dossier', 'rbgen.orsKey': 'abc' } }) }; window.__files = files;
+    const mk = name => ({ name, queryPermission: async () => 'granted', requestPermission: async () => 'granted', getFileHandle: async (n, o) => { if (!(n in files)) { if (!(o && o.create)) throw new Error('NF'); files[n] = ''; } return { createWritable: async () => { let buf = ''; return { write: async t => { buf = t; }, close: async () => { files[n] = buf; } }; }, getFile: async () => ({ text: async () => files[n] }) }; } });
+    window.showDirectoryPicker = async () => mk('D'); });
+  await p.route(/^(?!file).*/, r => r.abort());
+  await p.goto('file://' + path.join(__dirname, '..', '..', 'dist', 'generateur-roadbook.html')); await p.waitForTimeout(500);
+  await p.evaluate(() => document.querySelector('[data-act=prefs]').click()); await p.waitForTimeout(300); await p.click('#asPick'); await p.waitForTimeout(600);
+  console.log('question :', (await p.innerText('#modal')).replace(/\n+/g, ' | ').slice(0, 220));
+  await p.click('#modal >> text=Ceux du dossier'); await p.waitForTimeout(2000);
+  console.log('thème après restauration :', await p.evaluate(() => localStorage.getItem('rbgen.theme')), '| clé ORS :', await p.evaluate(() => localStorage.getItem('rbgen.orsKey')), 'erreurs', errs.join('|') || 0); await b.close(); })();
