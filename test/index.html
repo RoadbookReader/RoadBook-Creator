@@ -1051,7 +1051,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261120.0948</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261120.1623</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1094,7 +1094,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261120.0948 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261120.1623 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -4813,7 +4813,7 @@ async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'un
       ...(ignLite && IGN_PROPS[layer] ? { PROPERTYNAME: IGN_PROPS[layer] } : {}) });
     let j = null, err = null;
     for (let t = 0; t < (/troncon_de_route/.test(layer) ? 4 : 2) && !j; t++) {                       // le service répond parfois 503 ou 429 (trop de demandes) : on réessaie en attendant de plus en plus
-      try { j = await fetchJSON(IGN_WFS + '?' + mk(), {}, /troncon_de_route/.test(layer) ? 45000 : 25000); }
+      try { j = await fetchJSON(IGN_WFS + '?' + mk(), { cache: 'no-store' }, /troncon_de_route/.test(layer) ? 45000 : 25000); }      // no-store : le navigateur ne rejoue jamais une réponse d'erreur gardée en cache
       catch (e) {
         err = e; if (isCancelled()) throw new Error('annulé');
         if (e.status === 400 && ignLite) { ignLite = false; t--; continue; }      // liste d'attributs refusée : on la retire et on recommence
@@ -4874,7 +4874,7 @@ async function fetchIGNExtras(cells, progress, isCancelled) {      // repères d
         done++; progress(done / jobs.length, `Repères de la BD TOPO (IGN)… ${done}/${jobs.length}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, worker));
     if (stop) throw stop;
     for (const c of byCell.values()) { recs.set(c.k.slice(2), c); if (!c.miss.length) got.push(c); }
   }
@@ -4921,7 +4921,7 @@ async function fetchIGN(progress, isCancelled, detail) {
         done++; progress(done / jobs.length, `Téléchargement de la BD TOPO (IGN)… ${done}/${jobs.length}${memo}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, worker));
     if (fail) throw fail;
     for (const c of byCell.values()) { recs.set(c.k, c); got.push(c); }
   }

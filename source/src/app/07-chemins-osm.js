@@ -266,7 +266,7 @@ async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'un
       ...(ignLite && IGN_PROPS[layer] ? { PROPERTYNAME: IGN_PROPS[layer] } : {}) });
     let j = null, err = null;
     for (let t = 0; t < (/troncon_de_route/.test(layer) ? 4 : 2) && !j; t++) {                       // le service répond parfois 503 ou 429 (trop de demandes) : on réessaie en attendant de plus en plus
-      try { j = await fetchJSON(IGN_WFS + '?' + mk(), {}, /troncon_de_route/.test(layer) ? 45000 : 25000); }
+      try { j = await fetchJSON(IGN_WFS + '?' + mk(), { cache: 'no-store' }, /troncon_de_route/.test(layer) ? 45000 : 25000); }      // no-store : le navigateur ne rejoue jamais une réponse d'erreur gardée en cache
       catch (e) {
         err = e; if (isCancelled()) throw new Error('annulé');
         if (e.status === 400 && ignLite) { ignLite = false; t--; continue; }      // liste d'attributs refusée : on la retire et on recommence
@@ -327,7 +327,7 @@ async function fetchIGNExtras(cells, progress, isCancelled) {      // repères d
         done++; progress(done / jobs.length, `Repères de la BD TOPO (IGN)… ${done}/${jobs.length}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, worker));
     if (stop) throw stop;
     for (const c of byCell.values()) { recs.set(c.k.slice(2), c); if (!c.miss.length) got.push(c); }
   }
@@ -374,7 +374,7 @@ async function fetchIGN(progress, isCancelled, detail) {
         done++; progress(done / jobs.length, `Téléchargement de la BD TOPO (IGN)… ${done}/${jobs.length}${memo}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, worker));
     if (fail) throw fail;
     for (const c of byCell.values()) { recs.set(c.k, c); got.push(c); }
   }
