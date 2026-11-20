@@ -1051,13 +1051,14 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261117.2058</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261120.1635</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
       <button class="btn" id="bOpen" title="Ouvrir une trace GPX (ou un projet .json)"><span class="ic">📂</span><span class="lbl">Ouvrir GPX</span></button>
       <button class="btn" id="bDraw" title="Dessiner le parcours sur la carte"><span class="ic">✏️</span><span class="lbl">Dessiner</span></button>
       <button class="btn primary" id="bGen" title="Générer le roadbook depuis les chemins OSM"><span class="ic">⚙️</span><span class="lbl">Générer le roadbook</span></button>
+      <button class="btn" id="bRep" title="Rouvrir le rapport de la dernière génération (avertissements, parcelles…)"><span class="ic">📋</span><span class="lbl">Rapport</span></button>
       <button class="btn" id="bUndo" title="Annuler la dernière modification (Ctrl+Z)" disabled><span class="ic">↩️</span><span class="lbl">Annuler</span></button>
       <button class="btn" id="bSave" title="Sauvegarder le projet en cours (fichier .json à rouvrir plus tard)"><span class="ic">🗂️</span><span class="lbl">Sauvegarder</span></button>
       <button class="btn" id="bExport" title="Exporter au format GPX OpenRally"><span class="ic">💾</span><span class="lbl">Exporter GPX</span></button>
@@ -1093,7 +1094,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261117.2058</div>
+          <div class="ver">Version v0.261120.1635</div>
         </div>
       </div>
     </div>
@@ -1137,6 +1138,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <option value="lidar">🌲 LiDAR HD : relief sans les arbres</option>
             <option value="ombrage">⛰️ Ombrage du relief (flou en zoom serré)</option>
             <option value="courbes">〰️ Courbes de niveau (IGN)</option>
+            <option value="cadastre">🏘️ Parcelles cadastrales (IGN) — hors parcelle = chemin public</option>
             <option value="pentes">📐 Pentes fortes (≥ 30°, montagne)</option>
             <option value="onf">🌳 Forêts publiques (ONF)</option>
             <option value="prsf">🆘 Points de secours en forêt (PRSF)</option>
@@ -2928,6 +2930,38 @@ Object.assign(I18N_EN, {
   'Les tulipes viennent de la source des chemins ci-dessus ; les textes de la 3e case peuvent venir d’une autre source (même choix que dans « Générer le roadbook »).': 'Tulips come from the paths source above; the 3rd box texts can come from another source (same choice as in “Generate the roadbook”).',
   'BD TOPO détaillé (IGN)': 'Detailed BD TOPO (IGN)',
   'Avec les repères, France seulement': 'With landmarks, France only',
+  '🏘️ Parcelles cadastrales (IGN) — hors parcelle = chemin public': '🏘️ Cadastral parcels (IGN) — outside a parcel = public path',
+  'Rapport': 'Report',
+  'Rouvrir le rapport de la dernière génération (avertissements, parcelles…)': 'Reopen the report of the last generation (warnings, parcels…)',
+  '👁 Google Street View': '👁 Google Street View',
+  '🗺️ Google Maps': '🗺️ Google Maps',
+  '🔎 Autour d’ici': '🔎 Around here',
+  '📍 Ajouter un marqueur ici': '📍 Add a marker here',
+  'Autour d’ici': 'Around here',
+  'Rayon': 'Radius',
+  'Notes du roadbook': 'Roadbook notes',
+  'Marqueurs': 'Markers',
+  'Repères et panneaux écartés': 'Skipped landmarks and signs',
+  '🔎 POI autour de la trace…': '🔎 POIs around the track…',
+  'POI autour de la trace': 'POIs around the track',
+  'Cherche sur OpenStreetMap les lieux utiles le long de ta trace, dans un rayon autour d’elle (France et ailleurs).': 'Searches OpenStreetMap for useful places along your track, within a radius around it (France and elsewhere).',
+  'Carburant': 'Fuel',
+  'Eau potable, sources': 'Drinking water, springs',
+  'Refuges, abris': 'Huts, shelters',
+  'Restaurants, cafés': 'Restaurants, cafés',
+  'Hébergement, camping': 'Lodging, camping',
+  'Magasins (supermarché, boulangerie…)': 'Shops (supermarket, bakery…)',
+  'Santé (pharmacie, hôpital)': 'Health (pharmacy, hospital)',
+  'Toilettes': 'Toilets',
+  'Parkings': 'Car parks',
+  'Points de vue': 'Viewpoints',
+  'Rayon autour de la trace :': 'Radius around the track:',
+  '➕ Ajouter les résultats': '➕ Add the results',
+  '🔎 Chercher': '🔎 Search',
+  'Magasin': 'Shop',
+  'Santé': 'Health',
+  'Charge ou dessine d’abord une trace.': 'Load or draw a track first.',
+  'Coche au moins un type.': 'Tick at least one type.',
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
 // Le texte des notes du roadbook (cases .k3) n'est PAS traduit ici : sa langue sera un réglage séparé (étape 2).
@@ -3642,6 +3676,7 @@ const HEAT = {
   ombrage: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.SHADOW&STYLE=estompage_grayscale', { maxNativeZoom: 15, maxZoom: 19, zIndex: 5, className: 'mult', attribution: '© IGN – Estompage' }),
   pentes: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN&STYLE=normal', { maxNativeZoom: 17, maxZoom: 19, zIndex: 5, opacity: 0.6, attribution: '© IGN – Pentes' }),
   courbes: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=ELEVATION.CONTOUR.LINE&STYLE=normal', { maxNativeZoom: 18, maxZoom: 19, zIndex: 5, attribution: '© IGN – Courbes de niveau' }),
+  cadastre: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=CADASTRALPARCELS.PARCELS&STYLE=normal', { maxNativeZoom: 19, maxZoom: 19, zIndex: 5, attribution: '© IGN / DGFiP – Parcelles cadastrales' }),
   onf: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=FORETS.PUBLIQUES&STYLE=FORETS%20PUBLIQUES%20ONF', { maxNativeZoom: 16, maxZoom: 19, zIndex: 5, opacity: 0.8, attribution: '© IGN / ONF – Forêts publiques' }),
   prsf: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=PROTECTEDAREAS.PRSF&STYLE=POINT%20RENCONTRE%20SECOURS%20FORET', { maxNativeZoom: 17, maxZoom: 19, zIndex: 6, attribution: '© IGN / ONF – Points de secours en forêt' }),
   porteur: L.tileLayer('https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png&LAYER=IGNF_ACCESSIBILITE-PHYSIQUE-FORETS-PORTEUR&STYLE=normal', { maxNativeZoom: 17, maxZoom: 19, zIndex: 5, opacity: 0.8, attribution: '© IGN – Accessibilité des forêts (portage)' }),
@@ -3653,7 +3688,7 @@ const HEAT = {
   gpsoff: gpsOffLayer      // traces GPS OSM hors route, calculées à la demande (04b-heat-gps.js)
 };
 let curHeat = '';
-const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, courbes: 1, lidar: 1, ombrage: 1, prsf: 1 };
+const HEAT_BASE = { gps: .85, gpsoff: 1, hiking: .85, mtb: .85, cycling: .85, onf: .8, porteur: .8, skidder: .8, pentes: .6, courbes: 1, cadastre: 1, lidar: 1, ombrage: 1, prsf: 1 };
 let heatLevel = {}; try { heatLevel = JSON.parse(localStorage.getItem('rbgen.heatLevel') || '{}') || {}; } catch (_) {}
 /* Curseur d'intensité : 0 % à 100 % = atténuation (transparence) */
 function applyHeatLevel() {
@@ -4083,12 +4118,7 @@ window.addEventListener('mouseup', () => { if (pendingIns && !stroke) { pendingI
 }
 
 /* ---------- Clic droit (ou appui long) sur la carte : ouvrir cet endroit dans Google Street View ---------- */
-map.on('contextmenu', e => {
-  const la = e.latlng.lat.toFixed(6), lo = e.latlng.lng.toFixed(6);
-  const url = `https://www.google.com/maps?q=&layer=c&cbll=${la},${lo}`;      // cbll : Google cale sur le panorama le plus proche (le lien « pano/viewpoint » donnait un écran noir)
-  L.popup({ closeButton: false, className: 'svpop', offset: [0, 4] }).setLatLng(e.latlng)
-    .setContent(`<a class="svlnk" href="${url}" target="_blank" rel="noopener">👁 Ouvrir dans Google Street View</a><div class="svco">${la}, ${lo}</div>`).openOn(map);
-});
+map.on('contextmenu', e => rightClickMenu(e.latlng));
 /* ============================================================
    6. Mode dessin & itinéraire
    ============================================================ */
@@ -4712,6 +4742,7 @@ function failReason(e) {                 // raison courte et lisible d'un échec
   if (e && e.name === 'AbortError') return 'délai dépassé';
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'pas de réponse du serveur (réseau, blocage ou refus du navigateur)';
   if (/^HTTP (\d+)/.test(m)) return 'le serveur répond ' + m;
+  if (/not valid JSON|Unexpected token|Unexpected end of JSON/i.test(m)) return 'réponse inattendue du serveur (service momentanément surchargé ou en panne)';
   return m.slice(0, 90);
 }
 async function fetchOSM(progress, isCancelled) {      // mode rapide (fond vectoriel) par défaut ; IGN ou détaillé au choix ; les autres en secours
@@ -4765,6 +4796,14 @@ Object.assign(IGN_PROPS, {      // couches de repères (mode IGN détaillé) : c
   'BDTOPO_V3:detail_orographique': 'geometrie,cleabs,nature,toponyme', 'BDTOPO_V3:reservoir': 'geometrie,cleabs,nature,etat_de_l_objet',
   'BDTOPO_V3:construction_ponctuelle': 'geometrie,cleabs,nature,toponyme,etat_de_l_objet', 'BDTOPO_V3:zone_d_activite_ou_d_interet': 'geometrie,cleabs,categorie,nature,toponyme,etat_de_l_objet' });
 let ignLite = true;                                          // passe à false si le service refuse la liste d'attributs (on redemande alors tout)
+async function ignQueryRetry(layer, box, isCancelled) {      // le service IGN a parfois des coups de fatigue (page technique au lieu des données) : on réessaie plusieurs fois, en attendant de plus en plus
+  let last = null;
+  for (let t = 0; t < (/troncon_de_route/.test(layer) ? 4 : 1); t++) {      // eau et bâtiments : un seul tour (facultatifs), les routes : 4
+    try { return await ignQuery(layer, box, isCancelled); }
+    catch (e) { if (/annulé/.test(e.message || '') || isCancelled()) throw e; last = e; console.warn('BD TOPO : nouvel essai', layer, e); await sleep(5000 * (t + 1)); }
+  }
+  throw last;
+}
 async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'une couche sur un rectangle
   const out = [], PG = /batiment/.test(layer) ? 1500 : IGN_PAGE;      // pages plus petites pour les bâtiments (réponses lourdes)
   for (let page = 0; page < 60; page++) {
@@ -4773,8 +4812,8 @@ async function ignQuery(layer, box, isCancelled) {      // toutes les pages d'un
       BBOX: `${box[0].toFixed(5)},${box[1].toFixed(5)},${box[2].toFixed(5)},${box[3].toFixed(5)},urn:ogc:def:crs:EPSG::4326`, SORTBY: 'cleabs', COUNT: PG, STARTINDEX: page * PG,
       ...(ignLite && IGN_PROPS[layer] ? { PROPERTYNAME: IGN_PROPS[layer] } : {}) });
     let j = null, err = null;
-    for (let t = 0; t < 4 && !j; t++) {                       // le service répond parfois 503 ou 429 (trop de demandes) : on réessaie en attendant de plus en plus
-      try { j = await fetchJSON(IGN_WFS + '?' + mk(), {}, 90000); }
+    for (let t = 0; t < (/troncon_de_route/.test(layer) ? 4 : 2) && !j; t++) {                       // le service répond parfois 503 ou 429 (trop de demandes) : on réessaie en attendant de plus en plus
+      try { j = await fetchJSON(IGN_WFS + '?' + mk(), { cache: 'no-store' }, /troncon_de_route/.test(layer) ? 45000 : 25000); }      // no-store : le navigateur ne rejoue jamais une réponse d'erreur gardée en cache
       catch (e) {
         err = e; if (isCancelled()) throw new Error('annulé');
         if (e.status === 400 && ignLite) { ignLite = false; t--; continue; }      // liste d'attributs refusée : on la retire et on recommence
@@ -4835,7 +4874,7 @@ async function fetchIGNExtras(cells, progress, isCancelled) {      // repères d
         done++; progress(done / jobs.length, `Repères de la BD TOPO (IGN)… ${done}/${jobs.length}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, worker));
     if (stop) throw stop;
     for (const c of byCell.values()) { recs.set(c.k.slice(2), c); if (!c.miss.length) got.push(c); }
   }
@@ -4869,7 +4908,7 @@ async function fetchIGN(progress, isCancelled, detail) {
           let feats;
           const lab = j.l === 'b' ? 'bâtiments' : 'eau';
           if (j.l !== 'r' && skipped.has(lab)) feats = [];                       // cette couche a déjà échoué : on ne perd pas de temps
-          else try { feats = await ignQuery(j.name, box, () => isCancelled() || !!fail); }
+          else try { feats = await ignQueryRetry(j.name, box, () => isCancelled() || !!fail); }
           catch (e) { if (j.l === 'r' || /annulé/.test(e.message || '')) throw e; skipped.add(lab); console.warn('Couche IGN ignorée', j.name, e); feats = []; }     // eau et bâtiments sont facultatifs : seules les routes comptent
           for (const f of feats) {
             const s = ignSlim(j.l, f); if (!s) continue;
@@ -4882,7 +4921,7 @@ async function fetchIGN(progress, isCancelled, detail) {
         done++; progress(done / jobs.length, `Téléchargement de la BD TOPO (IGN)… ${done}/${jobs.length}${memo}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, worker));
     if (fail) throw fail;
     for (const c of byCell.values()) { recs.set(c.k, c); got.push(c); }
   }
@@ -7230,13 +7269,13 @@ async function buildGPX(onProg, mode) {
     let speed = null;
     if (n.wp) {
       const t = n.wp.type;
-      if (t === 'dn') ex.push(`<openrally:dn${attrs(n.wp.open || 1000, n.wp.clear || 90)}/>`, `<openrally:neutralization>${Math.max(0, Math.round((n.wp.dur || 0) * 60))}</openrally:neutralization>`);
+      if (t === 'dn') ex.push(`<openrally:dn${attrs(n.wp.open || 1000, n.wp.clear || 90, (n.wp.name || '').trim())}/>`, `<openrally:neutralization>${Math.max(0, Math.round((n.wp.dur || 0) * 60))}</openrally:neutralization>`);
       else if (isRadiusWP(t)) {
         if (isNumberedWP(t)) wpCount++;
         ex.push(`<openrally:${t === 'cp' ? 'checkpoint' : t}${attrs(n.wp.open || WP_DEF[t][0], n.wp.clear || WP_DEF[t][1], n.wp.name || (isNumberedWP(t) ? String(wpCount) : ''))}/>`);
       }
       if (t === 'ch') {      // CH : marqueur « checkpoint » vide (aucun rayon) ; le temps limite de la liaison part de ce CH jusqu'au contrôle horaire suivant
-        ex.push('<openrally:checkpoint/>');
+        ex.push(`<openrally:checkpoint${attrs(0, 0, (n.wp.name || '').trim())}/>`);
         if (n.wp.limit > 0) ex.push(`<openrally:timecontrol allowed="${Math.round(n.wp.limit)}"/>`);
       }
       if ((t === 'dt' || t === 'dss') && n.wp.limit > 0) ex.push(`<openrally:timecontrol allowed="${Math.round(n.wp.limit)}"/>`);      // temps limite (minutes) d'un DT / DSS, à côté de <openrally:dt/> ou <openrally:dss/>
@@ -7879,6 +7918,19 @@ function prefsDialog() {
      { label: '💾 Enregistrer mes réglages', cls: 'primary', onClick: () => prefsExport() }]);
   m.querySelector('#prefFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) prefsImport(f); });
 }
+/* ---------- Clic droit sur la carte : Street View, Google Maps, ajouter un marqueur ---------- */
+function rightClickMenu(ll) {
+  const la = ll.lat.toFixed(6), lo = ll.lng.toFixed(6);
+  const sv = `https://www.google.com/maps?q=&layer=c&cbll=${la},${lo}`;      // cbll : Google cale sur le panorama le plus proche (le lien « pano/viewpoint » donnait un écran noir)
+  const gm = `https://www.google.com/maps/search/?api=1&query=${la},${lo}`;
+  const pop = L.popup({ closeButton: false, className: 'svpop', offset: [0, 4] }).setLatLng(ll)
+    .setContent(`<a class="svlnk" href="${sv}" target="_blank" rel="noopener">👁 Google Street View</a><a class="svlnk" href="${gm}" target="_blank" rel="noopener">🗺️ Google Maps</a>`
+      + `<a class="svlnk" href="#" data-a="mark">📍 Ajouter un marqueur ici</a><div class="svco">${la}, ${lo}</div>`).openOn(map);
+  pop.getElement().querySelectorAll('[data-a]').forEach(el => el.addEventListener('click', ev => {
+    ev.preventDefault(); map.closePopup();
+    markForm({ lat: +la, lon: +lo, icon: 'pin', name: '', desc: '' }, true);
+  }));
+}
 /* ============================================================
    14. Fichiers, boutons, démarrage
    ============================================================ */
@@ -8456,6 +8508,7 @@ $('#magMax').onchange = e => { S.magMax = +e.target.value; updSnapBtn(); save();
 $('#routeMode').onchange = e => { S.routeMode = e.target.value; if (S.routeMode !== 'line') { S.prevRoute = S.routeMode; S.snapOn = true; } updSnapBtn(); save(); if (/^ors:/.test(S.routeMode) && !orsKey()) orsDialog(); };
 $('#orsBtn').onclick = orsDialog;
 $('#bGen').onclick = generate;
+$('#bRep').onclick = () => document.querySelector('[data-act=report]').click();
 $('#bSave').onclick = saveProject;
 $('#bUndo').onclick = () => { if (drawing) undo(); else undoAll(); };
 $('#bExport').onclick = exportGPX;
