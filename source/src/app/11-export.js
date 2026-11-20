@@ -88,7 +88,7 @@ async function buildGPX(onProg, mode) {
     }
     if (speed) ex.push(`<openrally:speed>${speed}</openrally:speed>`);
     if (n.fuel) ex.push('<openrally:fuel/>');
-    o.push(`  <wpt lat="${n.lat.toFixed(6)}" lon="${n.lon.toFixed(6)}">\n    <name>${i + 1}</name>\n    <desc>${xmlEsc((n.text || '').replace(/\n/g, ' / '))}</desc>\n    <extensions>\n      ${ex.join('\n      ')}\n    </extensions>\n  </wpt>`);
+    o.push(`  <wpt lat="${n.lat.toFixed(6)}" lon="${n.lon.toFixed(6)}">\n    <name>${i + 1}${n.wp && (n.wp.name || '').trim() ? xmlEsc(' – ' + n.wp.name.trim()) : ''}</name>\n    <desc>${xmlEsc((n.text || '').replace(/\n/g, ' / '))}</desc>\n    <extensions>\n      ${ex.join('\n      ')}\n    </extensions>\n  </wpt>`);
   }
   if (S.settings.marksExport !== false && mode !== 'orient') for (const m of S.marks || []) {
     const ic = MARK_ICONS.find(x => x[0] === m.icon) || MARK_ICONS[MARK_ICONS.length - 1];
