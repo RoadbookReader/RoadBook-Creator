@@ -1044,6 +1044,9 @@ body.dragNote .leaflet-tooltip{display:none}
 
 .livest { font-size: 12px; color: #6b6558; } .livest.warn { color: #b25a00; }
 #drawBox b.grab{display:block;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}#drawBox b.grab::before{content:"⠿ ";opacity:.55}
+
+#nv{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:6500;display:flex;gap:10px;align-items:center;background:var(--ink);color:#fff;padding:9px 12px 9px 16px;border-radius:10px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:92vw}
+#nv .btn{padding:5px 12px}
 </style>
 </head>
 <body>
@@ -1051,7 +1054,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261120.1738</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1012</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1094,7 +1097,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261120.1738</div>
+          <div class="ver">Version v0.261121.1012</div>
         </div>
       </div>
     </div>
@@ -3201,6 +3204,7 @@ function doSave() {
   catch (e) { }
   if (!ok) ProjDB.put(str).then(r => { if (r) { ProjDB.has = true; try { localStorage.removeItem(LS_KEY); } catch (_) { } } else if (!saveWarned) { saveWarned = true; toast('Sauvegarde auto impossible (projet trop gros) : utilise « Sauvegarder ».'); } });      // gros projet : trop lourd pour localStorage (~5 Mo) → IndexedDB
   histPush(str);
+  if (typeof asProject === 'function') asProject(str);      // copie dans le dossier de sauvegarde automatique (Chrome / Edge)
 }
 function save() {
   setDirty(true);
@@ -7965,6 +7969,34 @@ try {      // chaque réglage modifié déclenche l'écriture (après 1,5 s de c
   Storage.prototype.setItem = function (k, v) { si.call(this, k, v); if (mine(this, k)) asSchedule(); };
   Storage.prototype.removeItem = function (k) { ri.call(this, k); if (mine(this, k)) asSchedule(); };
 } catch (_) {}
+/* Projet en cours (trace + notes) : même contenu que « Enregistrer le projet », un fichier par nom de projet, réécrit 4 s après la dernière modification */
+const asProjOn = () => { try { return localStorage.getItem('rbgen.asProj') !== '0'; } catch (_) { return true; } };
+const asProjFile = () => ((S.name || 'Mon roadbook').replace(/[\\/:*?"<>|]+/g, '_').trim().slice(0, 80) || 'roadbook') + '.roadbook.json';
+let asPT = 0, asPLast = '';
+function asProject(str) {      // appelée par doSave() à chaque sauvegarde automatique
+  if (!AS.h || !asProjOn() || !S.ll.length) return;      // projet vide : on n'écrase jamais un vrai fichier du même nom
+  clearTimeout(asPT);
+  asPT = setTimeout(async () => {
+    if (str === asPLast) return;
+    try {
+      if ((await AS.h.queryPermission({ mode: 'readwrite' })) !== 'granted') { AS.pState = 'pause'; return; }
+      const f = await AS.h.getFileHandle(asProjFile(), { create: true }), w = await f.createWritable();
+      await w.write(str); await w.close(); asPLast = str; AS.pState = 'ok'; AS.pLast = Date.now();
+    } catch (e) { AS.pState = 'err'; console.warn('Sauvegarde auto du projet', e); }
+  }, 4000);
+}
+async function asFindProject() {      // projet le plus récent du dossier
+  let best = null;
+  try { for await (const [n, e] of AS.h.entries()) if (e.kind === 'file' && /\.roadbook\.json$/i.test(n)) { const f = await e.getFile(); if (!best || f.lastModified > best.f.lastModified) best = { n, f }; } } catch (_) {}
+  return best;
+}
+async function asOfferProject() {      // navigateur sans projet en cours : on propose d'ouvrir le dernier projet du dossier
+  if (!asProjOn() || S.ll.length || S.notes.length) return;
+  const b = await asFindProject(); if (!b) return;
+  const d = new Date(b.f.lastModified), p2 = x => String(x).padStart(2, '0'), when = p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + ' ' + p2(d.getHours()) + 'h' + p2(d.getMinutes());
+  openModal(gpsOffT('Projet trouvé dans ton dossier', 'Project found in your folder'), '<p>' + gpsOffT('Le dossier de sauvegarde automatique contient « ' + b.n.replace(/\.roadbook\.json$/i, '') + ' » (modifié le ' + when + '). Veux-tu l’ouvrir ?', 'The automatic backup folder holds “' + b.n.replace(/\.roadbook\.json$/i, '') + '” (modified ' + when + '). Open it?') + '</p>',
+    [{ label: gpsOffT('Plus tard', 'Later') }, 'sp', { label: gpsOffT('Ouvrir ce projet', 'Open this project'), cls: 'primary', onClick: () => loadFile(b.f) }]);
+}
 async function asChoose(after) {
   let h; try { h = await window.showDirectoryPicker({ id: 'rbgen-reglages', mode: 'readwrite' }); } catch (_) { return; }
   const o = await asRead(h); AS.h = h; await asStore(h);
@@ -7977,10 +8009,11 @@ async function asStop() { clearTimeout(AS.t); AS.h = null; AS.state = ''; await 
 function asBlockHtml() {
   if (!asOK()) return '<p class="help">' + gpsOffT('Sauvegarde automatique dans un dossier : disponible seulement sur Chrome ou Edge sur ordinateur.', 'Automatic backup to a folder: only available on Chrome or Edge on a computer.') + '</p>';
   const st = !AS.h ? gpsOffT('Désactivée.', 'Off.') : AS.state === 'ok' ? gpsOffT('Active : dossier « ' + AS.h.name + ' », fichier ' + AS_FILE + '.', 'On: folder “' + AS.h.name + '”, file ' + AS_FILE + '.') : AS.state === 'pause' ? gpsOffT('En pause : le navigateur attend ton accord au prochain clic (dossier « ' + AS.h.name + ' »).', 'Paused: the browser waits for your OK on the next click (folder “' + AS.h.name + '”).') : gpsOffT('Dossier « ' + AS.h.name + ' » choisi.', 'Folder “' + AS.h.name + '” chosen.');
-  return '<hr><p><b>' + gpsOffT('Sauvegarde automatique dans un dossier', 'Automatic backup to a folder') + '</b></p><p class="help" id="asSt">' + st + '</p><p><button class="btn" id="asPick">📁 ' + gpsOffT('Choisir le dossier', 'Choose the folder') + '</button> ' + (AS.h ? '<button class="btn" id="asStop">⏹ ' + gpsOffT('Arrêter', 'Stop') + '</button>' : '') + '</p>';
+  return '<hr><p><b>' + gpsOffT('Sauvegarde automatique dans un dossier', 'Automatic backup to a folder') + '</b></p><p class="help" id="asSt">' + st + '</p>' + (AS.h ? '<p><label><input type="checkbox" id="asProj"' + (asProjOn() ? ' checked' : '') + '> ' + gpsOffT('Sauvegarder aussi le projet en cours (trace et notes), un fichier par nom de projet', 'Also back up the current project (track and notes), one file per project name') + '</label></p>' : '') + '<p><button class="btn" id="asPick">📁 ' + gpsOffT('Choisir le dossier', 'Choose the folder') + '</button> ' + (AS.h ? '<button class="btn" id="asStop">⏹ ' + gpsOffT('Arrêter', 'Stop') + '</button>' : '') + '</p>';
 }
 function asBind(m) {
-  const p = m.querySelector('#asPick'), s = m.querySelector('#asStop');
+  const p = m.querySelector('#asPick'), s = m.querySelector('#asStop'), c = m.querySelector('#asProj');
+  if (c) c.onchange = () => { try { localStorage.setItem('rbgen.asProj', c.checked ? '1' : '0'); } catch (_) {} if (c.checked && S.ll.length) asProject(JSON.stringify(snapshot())); };
   if (p) p.onclick = () => { closeModal(); asChoose(() => {}); };
   if (s) s.onclick = async () => { await asStop(); toast(gpsOffT('Sauvegarde automatique arrêtée.', 'Automatic backup stopped.'), 'ok'); closeModal(); };
 }
@@ -7988,10 +8021,40 @@ function asBind(m) {
   if (!asOK()) return;
   AS.h = await asLoad(); if (!AS.h) return;
   let perm = 'prompt'; try { perm = await AS.h.queryPermission({ mode: 'readwrite' }); } catch (_) {}
-  const go = async () => { if (!prefKeys().length) { const o = await asRead(AS.h); if (o) return asApply(o); } asWrite(); };
+  const go = async () => { if (!prefKeys().length) { const o = await asRead(AS.h); if (o) return asApply(o); } asWrite(); setTimeout(asOfferProject, 1800); };
   if (perm === 'granted') go();
   else { AS.state = 'pause'; document.addEventListener('pointerdown', async () => { try { if (await AS.h.requestPermission({ mode: 'readwrite' }) === 'granted') go(); } catch (_) {} }, { once: true }); }
 })();
+/* ---------- Message « Nouvelle version disponible » : compare la version de cette page avec version.json publié à côté d'elle ---------- */
+const NV = { last: 0 };
+async function nvCheck(force) {
+  if (!/^https?:$/.test(location.protocol) || navigator.onLine === false) return;
+  if (!force && Date.now() - NV.last < 30 * 60 * 1000) return;
+  NV.last = Date.now();
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const j = await r.json(), cur = ((document.querySelector('.vtag') || {}).textContent || '').trim(), ok = v => /^v0\.\d{6}\.\d{4}$/.test(v || '');
+    if (ok(j.v) && ok(cur) && j.v > cur) nvShow(j.v);      // AAMMJJ.HHMM : l'ordre des textes est l'ordre des dates
+  } catch (_) {}
+}
+function nvShow(v) {
+  try { if (sessionStorage.getItem('rbgen.nvX') === v) return; } catch (_) {}
+  if (document.getElementById('nv')) return;
+  const d = document.createElement('div'); d.id = 'nv';
+  d.innerHTML = '<span>🔄 ' + gpsOffT('Nouvelle version disponible', 'New version available') + ' (' + v + ')</span><button class="btn primary" id="nvGo">' + gpsOffT('Recharger', 'Reload') + '</button><button class="btn" id="nvX" title="' + gpsOffT('Plus tard', 'Later') + '">✕</button>';
+  document.body.appendChild(d);
+  d.querySelector('#nvX').onclick = () => { try { sessionStorage.setItem('rbgen.nvX', v); } catch (_) {} d.remove(); };
+  d.querySelector('#nvGo').onclick = async () => {
+    d.querySelector('#nvGo').disabled = true;
+    try { clearTimeout(saveTimer); if (S.ll.length || S.notes.length) doSave(); } catch (_) {}      // le projet en cours est gardé avant de recharger
+    try { await fetch(location.href, { cache: 'reload' }); } catch (_) {}
+    try { for (const k of await caches.keys()) await caches.delete(k); const rg = await navigator.serviceWorker.getRegistration(); if (rg) await rg.update(); } catch (_) {}
+    location.reload();
+  };
+}
+setTimeout(() => nvCheck(true), 3000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) nvCheck(); });
+setInterval(nvCheck, 30 * 60 * 1000);
 /* ============================================================
    14. Fichiers, boutons, démarrage
    ============================================================ */
@@ -8641,7 +8704,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('#dr
 })();
 
 // accès pour les tests automatisés
-window.__rb = { trNote, noteView, svgToPNG, tulipSVG, pointAt, inv, tulipEditor, measureForNote, openMeasure, measureAtLL, bendList, bendAt, editNote, altDialog, view3D, cleanEle, timeSeries, timeAt, buildGPX, stagesDialog, stageList, addStage, marksDialog, markForm, pickTrack, parseGPX, cutAt, reverseCtrl, mergeFile, reduceDialog, snapDialog, cleanEnds, rebuildFromSegs, S, map, get T() { return T; }, get G() { return G; }, generate: runGenerate, buildGPX, loadText: (txt, name) => loadFile(new File([txt], name || 'test.gpx')), tulipSVG, openSettings, followRoad, ringCircle, dxy, allIGN, importOsm, noteView, addManualNote, notesSVG, renderAll, renderRadii, noteRadii };
+window.__rb = { asOfferProject, trNote, noteView, svgToPNG, tulipSVG, pointAt, inv, tulipEditor, measureForNote, openMeasure, measureAtLL, bendList, bendAt, editNote, altDialog, view3D, cleanEle, timeSeries, timeAt, buildGPX, stagesDialog, stageList, addStage, marksDialog, markForm, pickTrack, parseGPX, cutAt, reverseCtrl, mergeFile, reduceDialog, snapDialog, cleanEnds, rebuildFromSegs, S, map, get T() { return T; }, get G() { return G; }, generate: runGenerate, buildGPX, loadText: (txt, name) => loadFile(new File([txt], name || 'test.gpx')), tulipSVG, openSettings, followRoad, ringCircle, dxy, allIGN, importOsm, noteView, addManualNote, notesSVG, renderAll, renderRadii, noteRadii };
 I18N.onSet(() => { applyNoteLang(); if (S.notes && S.notes.length) { renderRoadbook(); save(); } });      // la langue des notes suit celle de l'interface
 })();
 

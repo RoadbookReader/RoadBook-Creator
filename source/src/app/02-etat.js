@@ -41,6 +41,7 @@ function doSave() {
   catch (e) { }
   if (!ok) ProjDB.put(str).then(r => { if (r) { ProjDB.has = true; try { localStorage.removeItem(LS_KEY); } catch (_) { } } else if (!saveWarned) { saveWarned = true; toast('Sauvegarde auto impossible (projet trop gros) : utilise « Sauvegarder ».'); } });      // gros projet : trop lourd pour localStorage (~5 Mo) → IndexedDB
   histPush(str);
+  if (typeof asProject === 'function') asProject(str);      // copie dans le dossier de sauvegarde automatique (Chrome / Edge)
 }
 function save() {
   setDirty(true);

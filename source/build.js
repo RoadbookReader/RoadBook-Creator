@@ -27,6 +27,7 @@ console.log('OK', out, (html.length / 1024).toFixed(0) + ' Ko', stamp, version);
 {
   const pd = path.join(d, 'dist', 'pwa'); fs.mkdirSync(pd, { recursive: true });
   fs.writeFileSync(path.join(pd, 'index.html'), html);
+  fs.writeFileSync(path.join(pd, 'version.json'), JSON.stringify({ v: version, stamp }));      // lu par l'appli pour proposer « Nouvelle version disponible »
   fs.cpSync(path.join(d, 'src', 'manuel'), path.join(pd, 'manuel'), { recursive: true });
   fs.cpSync(path.join(d, 'src', 'manuel'), path.join(d, 'dist', 'manuel'), { recursive: true });
   const mf = ['./manuel/', './manuel/index.html', './manuel/en.html'].concat([].concat(...['', 'en'].map(sub => fs.readdirSync(path.join(d, 'src', 'manuel', 'img', sub), { withFileTypes: true }).filter(e => e.isFile()).map(e => './manuel/img/' + (sub ? sub + '/' : '') + e.name))));

@@ -26,6 +26,34 @@ try {      // chaque réglage modifié déclenche l'écriture (après 1,5 s de c
   Storage.prototype.setItem = function (k, v) { si.call(this, k, v); if (mine(this, k)) asSchedule(); };
   Storage.prototype.removeItem = function (k) { ri.call(this, k); if (mine(this, k)) asSchedule(); };
 } catch (_) {}
+/* Projet en cours (trace + notes) : même contenu que « Enregistrer le projet », un fichier par nom de projet, réécrit 4 s après la dernière modification */
+const asProjOn = () => { try { return localStorage.getItem('rbgen.asProj') !== '0'; } catch (_) { return true; } };
+const asProjFile = () => ((S.name || 'Mon roadbook').replace(/[\\/:*?"<>|]+/g, '_').trim().slice(0, 80) || 'roadbook') + '.roadbook.json';
+let asPT = 0, asPLast = '';
+function asProject(str) {      // appelée par doSave() à chaque sauvegarde automatique
+  if (!AS.h || !asProjOn() || !S.ll.length) return;      // projet vide : on n'écrase jamais un vrai fichier du même nom
+  clearTimeout(asPT);
+  asPT = setTimeout(async () => {
+    if (str === asPLast) return;
+    try {
+      if ((await AS.h.queryPermission({ mode: 'readwrite' })) !== 'granted') { AS.pState = 'pause'; return; }
+      const f = await AS.h.getFileHandle(asProjFile(), { create: true }), w = await f.createWritable();
+      await w.write(str); await w.close(); asPLast = str; AS.pState = 'ok'; AS.pLast = Date.now();
+    } catch (e) { AS.pState = 'err'; console.warn('Sauvegarde auto du projet', e); }
+  }, 4000);
+}
+async function asFindProject() {      // projet le plus récent du dossier
+  let best = null;
+  try { for await (const [n, e] of AS.h.entries()) if (e.kind === 'file' && /\.roadbook\.json$/i.test(n)) { const f = await e.getFile(); if (!best || f.lastModified > best.f.lastModified) best = { n, f }; } } catch (_) {}
+  return best;
+}
+async function asOfferProject() {      // navigateur sans projet en cours : on propose d'ouvrir le dernier projet du dossier
+  if (!asProjOn() || S.ll.length || S.notes.length) return;
+  const b = await asFindProject(); if (!b) return;
+  const d = new Date(b.f.lastModified), p2 = x => String(x).padStart(2, '0'), when = p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + ' ' + p2(d.getHours()) + 'h' + p2(d.getMinutes());
+  openModal(gpsOffT('Projet trouvé dans ton dossier', 'Project found in your folder'), '<p>' + gpsOffT('Le dossier de sauvegarde automatique contient « ' + b.n.replace(/\.roadbook\.json$/i, '') + ' » (modifié le ' + when + '). Veux-tu l’ouvrir ?', 'The automatic backup folder holds “' + b.n.replace(/\.roadbook\.json$/i, '') + '” (modified ' + when + '). Open it?') + '</p>',
+    [{ label: gpsOffT('Plus tard', 'Later') }, 'sp', { label: gpsOffT('Ouvrir ce projet', 'Open this project'), cls: 'primary', onClick: () => loadFile(b.f) }]);
+}
 async function asChoose(after) {
   let h; try { h = await window.showDirectoryPicker({ id: 'rbgen-reglages', mode: 'readwrite' }); } catch (_) { return; }
   const o = await asRead(h); AS.h = h; await asStore(h);
@@ -38,10 +66,11 @@ async function asStop() { clearTimeout(AS.t); AS.h = null; AS.state = ''; await 
 function asBlockHtml() {
   if (!asOK()) return '<p class="help">' + gpsOffT('Sauvegarde automatique dans un dossier : disponible seulement sur Chrome ou Edge sur ordinateur.', 'Automatic backup to a folder: only available on Chrome or Edge on a computer.') + '</p>';
   const st = !AS.h ? gpsOffT('Désactivée.', 'Off.') : AS.state === 'ok' ? gpsOffT('Active : dossier « ' + AS.h.name + ' », fichier ' + AS_FILE + '.', 'On: folder “' + AS.h.name + '”, file ' + AS_FILE + '.') : AS.state === 'pause' ? gpsOffT('En pause : le navigateur attend ton accord au prochain clic (dossier « ' + AS.h.name + ' »).', 'Paused: the browser waits for your OK on the next click (folder “' + AS.h.name + '”).') : gpsOffT('Dossier « ' + AS.h.name + ' » choisi.', 'Folder “' + AS.h.name + '” chosen.');
-  return '<hr><p><b>' + gpsOffT('Sauvegarde automatique dans un dossier', 'Automatic backup to a folder') + '</b></p><p class="help" id="asSt">' + st + '</p><p><button class="btn" id="asPick">📁 ' + gpsOffT('Choisir le dossier', 'Choose the folder') + '</button> ' + (AS.h ? '<button class="btn" id="asStop">⏹ ' + gpsOffT('Arrêter', 'Stop') + '</button>' : '') + '</p>';
+  return '<hr><p><b>' + gpsOffT('Sauvegarde automatique dans un dossier', 'Automatic backup to a folder') + '</b></p><p class="help" id="asSt">' + st + '</p>' + (AS.h ? '<p><label><input type="checkbox" id="asProj"' + (asProjOn() ? ' checked' : '') + '> ' + gpsOffT('Sauvegarder aussi le projet en cours (trace et notes), un fichier par nom de projet', 'Also back up the current project (track and notes), one file per project name') + '</label></p>' : '') + '<p><button class="btn" id="asPick">📁 ' + gpsOffT('Choisir le dossier', 'Choose the folder') + '</button> ' + (AS.h ? '<button class="btn" id="asStop">⏹ ' + gpsOffT('Arrêter', 'Stop') + '</button>' : '') + '</p>';
 }
 function asBind(m) {
-  const p = m.querySelector('#asPick'), s = m.querySelector('#asStop');
+  const p = m.querySelector('#asPick'), s = m.querySelector('#asStop'), c = m.querySelector('#asProj');
+  if (c) c.onchange = () => { try { localStorage.setItem('rbgen.asProj', c.checked ? '1' : '0'); } catch (_) {} if (c.checked && S.ll.length) asProject(JSON.stringify(snapshot())); };
   if (p) p.onclick = () => { closeModal(); asChoose(() => {}); };
   if (s) s.onclick = async () => { await asStop(); toast(gpsOffT('Sauvegarde automatique arrêtée.', 'Automatic backup stopped.'), 'ok'); closeModal(); };
 }
@@ -49,7 +78,7 @@ function asBind(m) {
   if (!asOK()) return;
   AS.h = await asLoad(); if (!AS.h) return;
   let perm = 'prompt'; try { perm = await AS.h.queryPermission({ mode: 'readwrite' }); } catch (_) {}
-  const go = async () => { if (!prefKeys().length) { const o = await asRead(AS.h); if (o) return asApply(o); } asWrite(); };
+  const go = async () => { if (!prefKeys().length) { const o = await asRead(AS.h); if (o) return asApply(o); } asWrite(); setTimeout(asOfferProject, 1800); };
   if (perm === 'granted') go();
   else { AS.state = 'pause'; document.addEventListener('pointerdown', async () => { try { if (await AS.h.requestPermission({ mode: 'readwrite' }) === 'granted') go(); } catch (_) {} }, { once: true }); }
 })();

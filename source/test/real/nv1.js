@@ -1,0 +1,10 @@
+const { chromium } = require('playwright'); const http = require('http'), fs = require('fs'), path = require('path');
+const dir = path.join(__dirname, '..', '..', 'dist', 'pwa'); let ver = JSON.parse(fs.readFileSync(dir + '/version.json')).v;
+const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; if (u === '/version.json') { r.writeHead(200, { 'content-type': 'application/json' }); return r.end(JSON.stringify({ v: ver })); } const f = path.join(dir, u === '/' ? 'index.html' : u); if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'content-type': f.endsWith('.html') ? 'text/html' : 'application/octet-stream' }); r.end(fs.readFileSync(f)); }).listen(8765);
+(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 900, height: 600 }, locale: 'fr-FR' })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.route(/^https?:\/\/(?!localhost)/, r => r.abort());
+  await p.goto('http://localhost:8765/'); await p.waitForTimeout(4000); console.log('même version → bandeau :', await p.evaluate(() => !!document.getElementById('nv')));
+  ver = 'v0.991231.2359'; await p.evaluate(() => nvCheckTest && 0).catch(() => {}); await p.reload(); await p.waitForTimeout(4000);
+  console.log('version plus récente → bandeau :', await p.evaluate(() => !!document.getElementById('nv')), '|', await p.evaluate(() => (document.getElementById('nv') || {}).innerText)); await p.screenshot({ path: '/tmp/apercu-nv.png' });
+  await p.click('#nvX'); console.log('après ✕ :', await p.evaluate(() => !!document.getElementById('nv')));
+  await p.reload(); await p.waitForTimeout(4000); console.log('rechargement même onglet (✕ retenu) :', await p.evaluate(() => !!document.getElementById('nv')), 'erreurs', errs.join('|') || 0); srv.close(); await b.close(); })();
