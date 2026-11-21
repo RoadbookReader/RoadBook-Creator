@@ -53,7 +53,7 @@ function regDialog() {
 <div class="fld"><label>Résultat final</label>${sel('res', p.res, [['pts', 'Points'], ['time', 'Temps']])}</div>
 <div class="fld"><label>Conversion</label><span>1 min = <input data-k="k" size="3" value="${p.k}"> pts</span></div></div>
 <div class="fld"><label>Description (visible par les pilotes)</label><textarea data-k="desc">${esc(p.desc || '')}</textarea></div>
-<div style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
+<div class="rgtw" style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
 <div class="rgsp"><b>Temps de spéciale</b> (chrono DSS → ASS)<br>Compté comme ${sel('spm', p.sp.m, [['none', 'Non compté'], ['time', 'Du temps'], ['pts', 'Des points']])}${p.sp.m === 'pts' ? ` &nbsp;1 min de spéciale = <input data-k="spk" size="3" value="${p.sp.k}"> pt` : ''}</div>
 <div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
     }
@@ -62,7 +62,12 @@ function regDialog() {
   };
   const m = openModal('Règlements particuliers', '<div id="rgB"></div>', [{ label: 'Fermer', cls: 'primary' }], { noEsc: false });
   m.classList.add('wide'); const B = m.querySelector('#rgB');
-  const draw = () => { B.innerHTML = body(); };
+  const draw = () => {                                              // le tableau est reconstruit : on garde la position de défilement
+    const sc = () => [m.querySelector('.mb'), B.querySelector('.rgtw')];
+    const pos = sc().map(e => e ? e.scrollTop : 0);
+    B.innerHTML = body();
+    sc().forEach((e, i) => { if (e) e.scrollTop = pos[i]; });
+  };
   const newId = () => 'p' + Date.now().toString(36);
   const commit = () => { st.sel = cur; regSave(st); };
   B.addEventListener('click', e => {

@@ -1057,7 +1057,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1153</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1158</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1101,7 +1101,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261121.1153 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261121.1158 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -8151,7 +8151,7 @@ function regDialog() {
 <div class="fld"><label>Résultat final</label>${sel('res', p.res, [['pts', 'Points'], ['time', 'Temps']])}</div>
 <div class="fld"><label>Conversion</label><span>1 min = <input data-k="k" size="3" value="${p.k}"> pts</span></div></div>
 <div class="fld"><label>Description (visible par les pilotes)</label><textarea data-k="desc">${esc(p.desc || '')}</textarea></div>
-<div style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
+<div class="rgtw" style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
 <div class="rgsp"><b>Temps de spéciale</b> (chrono DSS → ASS)<br>Compté comme ${sel('spm', p.sp.m, [['none', 'Non compté'], ['time', 'Du temps'], ['pts', 'Des points']])}${p.sp.m === 'pts' ? ` &nbsp;1 min de spéciale = <input data-k="spk" size="3" value="${p.sp.k}"> pt` : ''}</div>
 <div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
     }
@@ -8160,7 +8160,12 @@ function regDialog() {
   };
   const m = openModal('Règlements particuliers', '<div id="rgB"></div>', [{ label: 'Fermer', cls: 'primary' }], { noEsc: false });
   m.classList.add('wide'); const B = m.querySelector('#rgB');
-  const draw = () => { B.innerHTML = body(); };
+  const draw = () => {                                              // le tableau est reconstruit : on garde la position de défilement
+    const sc = () => [m.querySelector('.mb'), B.querySelector('.rgtw')];
+    const pos = sc().map(e => e ? e.scrollTop : 0);
+    B.innerHTML = body();
+    sc().forEach((e, i) => { if (e) e.scrollTop = pos[i]; });
+  };
   const newId = () => 'p' + Date.now().toString(36);
   const commit = () => { st.sel = cur; regSave(st); };
   B.addEventListener('click', e => {
