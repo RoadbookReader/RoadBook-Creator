@@ -1047,6 +1047,9 @@ body.dragNote .leaflet-tooltip{display:none}
 
 #nv{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:6500;display:flex;gap:10px;align-items:center;background:var(--ink);color:#fff;padding:9px 12px 9px 16px;border-radius:10px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:92vw}
 #nv .btn{padding:5px 12px}
+
+#modal.wide{width:min(920px,96vw);max-width:96vw}
+.mbtn.sm{padding:5px 9px;font-size:13px}
 </style>
 </head>
 <body>
@@ -1054,7 +1057,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1052</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1210</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1089,6 +1092,7 @@ body.dragNote .leaflet-tooltip{display:none}
           <div class="mbody" id="g-cfg">
             <button data-act="settings">⚙️ Réglages de génération</button>
             <button data-act="prefs">💾 Mes réglages (enregistrer / restaurer)</button>
+            <button data-act="reg">📏 Règlements particuliers</button>
             <button data-act="theme">🎨 Thème : <span id="themeName">Dakar jour</span></button>
             <button data-act="lang" data-i18n-skip>🌐 Langue / Language : <span id="langName">Français</span></button>
           </div>
@@ -1097,7 +1101,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261121.1052</div>
+          <div class="ver">Version v0.261121.1210</div>
         </div>
       </div>
     </div>
@@ -2965,6 +2969,35 @@ Object.assign(I18N_EN, {
   'Santé': 'Health',
   'Charge ou dessine d’abord une trace.': 'Load or draw a track first.',
   'Coche au moins un type.': 'Tick at least one type.',
+  '📏 Règlements particuliers': '📏 Particular rules',
+  'Règlements particuliers': 'Particular rules',
+  'Règlement particulier inclus': 'Particular rules included',
+  'Aucun (le lecteur garde ses règles)': 'None (the reader keeps its own rules)',
+  'préréglé': 'preset',
+  '＋ Nouveau': '＋ New',
+  'Dupliquer': 'Duplicate',
+  'Supprimer': 'Delete',
+  'Résultat final': 'Final result',
+  'Conversion': 'Conversion',
+  'Description (visible par les pilotes)': 'Description (visible to riders)',
+  'Type de WP': 'WP type',
+  'WP manqué': 'Missed WP',
+  'Valeur': 'Value',
+  'Avance / retard': 'Early / late',
+  'Tolérance': 'Tolerance',
+  'Aucune': 'None',
+  'Temps': 'Time',
+  'Points': 'Points',
+  'Avance → temps': 'Early → time',
+  'Avance → points': 'Early → points',
+  'Retard → temps': 'Late → time',
+  'Avance + retard → temps': 'Early + late → time',
+  'Retard → points': 'Late → points',
+  'Avance + retard → points': 'Early + late → points',
+  'Non compté': 'Not counted',
+  'Du temps': 'As time',
+  'Des points': 'As points',
+  'Un type sans ligne renseignée ne donne aucune pénalité.': 'A type with no line filled in gives no penalty.',
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
 // Le texte des notes du roadbook (cases .k3) n'est PAS traduit ici : sa langue sera un réglage séparé (étape 2).
@@ -7267,7 +7300,7 @@ async function buildGPX(onProg, mode, opts) {
   const o = [];
   o.push('<?xml version="1.0" encoding="UTF-8"?>');
   o.push(`<gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Generateur de Roadbook OSM" version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:openrally="${NS}" xmlns:rbgen="https://roadbookreader.github.io/RoadBook-Creator/ns" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd ${NS} http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3/openrally.xsd">`);
-  o.push(`  <metadata>\n    <name>${xmlEsc(S.name)}</name>${(S.desc || '').trim() || srcNote() ? `\n    <desc>${xmlEsc([(S.desc || '').trim(), srcNote()].filter(Boolean).join('\n'))}</desc>` : ''}\n    <time>${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</time>\n    <extensions>\n      <openrally:units>metric</openrally:units>\n      <openrally:distance>${km(T.L)}</openrally:distance>${proj ? `\n      <rbgen:project encoding="gzip+base64">${proj}</rbgen:project>` : ''}\n    </extensions>\n  </metadata>`);
+  o.push(`  <metadata>\n    <name>${xmlEsc(S.name)}</name>${(S.desc || '').trim() || srcNote() ? `\n    <desc>${xmlEsc([(S.desc || '').trim(), srcNote()].filter(Boolean).join('\n'))}</desc>` : ''}\n    <time>${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</time>\n    <extensions>\n      <openrally:units>metric</openrally:units>\n      <openrally:distance>${km(T.L)}</openrally:distance>${proj ? `\n      <rbgen:project encoding="gzip+base64">${proj}</rbgen:project>` : ''}${typeof regXml === 'function' ? regXml(opts.reg) : ''}\n    </extensions>\n  </metadata>`);
   let wpCount = 0;
   for (let i = 0; i < S.notes.length; i++) {
     const n = S.notes[i];
@@ -7330,13 +7363,15 @@ async function exportGPX() {
   if (!T || !S.notes.length) { toast('Génère d’abord le roadbook.', 'err'); return; }
   let pk = 0; try { pk = Math.round((await gzipB64(JSON.stringify(snapshot()))).length / 1024); } catch (e) { }
   const opt = (v, t, d, w, on) => `<label class="xopt${on ? ' on' : ''}"><input type="radio" name="xgpx" value="${v}"${on ? ' checked' : ''}><div><b>${t}</b><div class="xd">${d}</div>${w ? `<div class="xw">${w}</div>` : ''}</div></label>`;
+  const rst = regLoad(), rall = regAll(rst), rlast = (() => { try { return localStorage.getItem('rbgen.regExp') || ''; } catch (_) { return ''; } })();
+  const rsel = `<div class="fld" style="margin-top:10px"><label for="xReg">Règlement particulier inclus</label><select id="xReg"><option value="">Aucun (le lecteur garde ses règles)</option>${rall.map(p => `<option value="${p.id}"${p.id === rlast ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>`;
   const m = openModal('Exporter le GPX', `<div style="font-size:13px;color:#6b6558;margin-bottom:10px">Que veux-tu mettre dans le fichier ?</div>` +
     opt('proj', 'GPX Roadbook + Projet', 'Notes + waypoints + trace + projet. Pour le rouvrir plus tard dans l’éditeur et le modifier. Le lecteur ignore le projet.' + (pk ? ` Ajoute environ ${pk >= 1024 ? (pk / 1024).toFixed(1).replace('.', ',') + ' Mo' : pk + ' Ko'}.` : ''), '', false) +
     opt('full', 'GPX Roadbook complet', 'Notes + waypoints + trace. Pour ton lecteur et pour les pilotes. Fichier léger.', 'Aucune possibilité de reprendre et modifier le roadbook.', true) +
     opt('rb', 'GPX Mode Roadbook', 'Notes + waypoints, sans la trace.', '', false) +
     opt('trace', 'GPX Mode Trace', 'Trace + waypoints, sans les notes du roadbook. Très léger.', '', false) +
-    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false),
-    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full') }], { noEsc: false });
+    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false) + rsel,
+    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => { const rid = (mm.querySelector('#xReg') || {}).value || ''; try { localStorage.setItem('rbgen.regExp', rid); } catch (_) { } runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full', { reg: rall.find(p => p.id === rid) || null }); } }], { noEsc: false });
   m.querySelectorAll('input[name=xgpx]').forEach(r => r.onchange = () => m.querySelectorAll('.xopt').forEach(l => l.classList.toggle('on', l.querySelector('input').checked)));
 }
 async function runExport(mode, opts) {
@@ -7372,7 +7407,7 @@ function saveProject() {
 let modalOpts = null;
 function openModal(title, body, buttons, opts) {
   if (typeof rptClear === 'function') rptClear();
-  const m = $('#modal'); modalOpts = opts || {};
+  const m = $('#modal'); modalOpts = opts || {}; m.classList.remove('wide');
   m.innerHTML = `<h2>${esc(title)}</h2><div class="mb">${body}</div><div class="mf"></div>`;
   const mf = m.querySelector('.mf');
   for (const b of buttons || []) {
@@ -8063,6 +8098,102 @@ function nvShow(v) {
 setTimeout(() => nvCheck(true), 3000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) nvCheck(); });
 setInterval(nvCheck, 30 * 60 * 1000);
+/* ---------- Règlements particuliers : profils de pénalités par type de WP, écrits dans le GPX (<rbgen:rules>) ---------- */
+const REG_KEY = 'rbgen.reg';
+const REG_FIM = { id: 'fim', name: 'FIM', builtin: true, desc: 'Règlement FIM 2026 appliqué par le lecteur : départ anticipé, CH (1 min par minute), CP manqué 15 min, temps maximum de spéciale…', res: 'time', k: 2, sp: { m: 'time', k: 1 }, rows: {} };
+const REG_TIMED = ['ch', 'dss', 'ass', 'dt', 'ft', 'dn', 'fn'];      // seuls ces types ont une heure : avance / retard possible
+const REG_AR = [['none', 'Aucune'], ['early-time', 'Avance → temps'], ['late-time', 'Retard → temps'], ['both-time', 'Avance + retard → temps'], ['early-pts', 'Avance → points'], ['late-pts', 'Retard → points'], ['both-pts', 'Avance + retard → points']];
+function regNum(v, d) { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) && x >= 0 ? x : (d || 0); }
+function regLoad() {
+  let o = null; try { o = JSON.parse(localStorage.getItem(REG_KEY) || 'null'); } catch (_) { }
+  if (!o || !Array.isArray(o.list)) {
+    const nav = { id: 'nav', name: 'Navigation', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, rows: {} };
+    o = { list: [nav], sel: 'nav' };
+  }
+  return o;
+}
+function regSave(o) { try { localStorage.setItem(REG_KEY, JSON.stringify(o)); } catch (_) { } }
+function regAll(o) { return [REG_FIM].concat(o.list); }
+function regRow(p, t) { return p.rows[t] || (p.rows[t] = { mu: 'none', mv: 0, ar: 'none', tol: 0 }); }
+function regFromFim() {                                          // point de départ copiable : les lignes principales du règlement FIM
+  const r = {}; r.cp = { mu: 'time', mv: 15, ar: 'none', tol: 0 }; r.ch = { mu: 'none', mv: 0, ar: 'both-time', tol: 0 }; r.ft = { mu: 'none', mv: 0, ar: 'late-time', tol: 0 };
+  return r;
+}
+function regXml(p) {                                             // bloc GPX ; p = profil ou null
+  if (!p) return '';
+  const q = s => xmlEsc(String(s));
+  if (p.builtin) return `\n      <rbgen:rules name="${q(p.name)}" builtin="fim"><rbgen:desc>${q(p.desc)}</rbgen:desc></rbgen:rules>`;
+  const o = [`\n      <rbgen:rules name="${q(p.name)}" result="${p.res === 'time' ? 'time' : 'points'}" ptsPerMin="${regNum(p.k, 1)}">`];
+  if ((p.desc || '').trim()) o.push(`        <rbgen:desc>${q(p.desc.trim())}</rbgen:desc>`);
+  if (p.sp && p.sp.m !== 'none') o.push(`        <rbgen:special mode="${p.sp.m === 'pts' ? 'points' : 'time'}" ptsPerMin="${regNum(p.sp.k, 1)}"/>`);
+  for (const [t] of WP_TYPES) {
+    if (!t) continue;
+    const r = p.rows[t]; const tm = REG_TIMED.includes(t), ar = tm && r ? r.ar : 'none';
+    if (!r || (r.mu === 'none' && ar === 'none')) continue;
+    let a = ` type="${t}"`;
+    if (r.mu !== 'none') a += ` miss="${r.mu === 'pts' ? 'points' : 'time'}" value="${regNum(r.mv)}"`;
+    if (ar !== 'none') a += ` timing="${ar}" tol="${regNum(r.tol)}"`;
+    o.push(`        <rbgen:wp${a}/>`);
+  }
+  o.push('      </rbgen:rules>');
+  return o.join('\n');
+}
+function regDialog() {
+  const st = regLoad(); let cur = st.sel;
+  const cp = () => regAll(st).find(p => p.id === cur) || REG_FIM;
+  const sel = (n, v, opts) => `<select data-k="${n}">${opts.map(([a, b]) => `<option value="${a}"${a === v ? ' selected' : ''}>${b}</option>`).join('')}</select>`;
+  const body = () => {
+    const p = cp(), ro = !!p.builtin;
+    const list = regAll(st).map(x => `<div class="rgit${x.id === cur ? ' on' : ''}" data-id="${x.id}">${esc(x.name)}${x.builtin ? ' <small>préréglé</small>' : ''}</div>`).join('');
+    let ed;
+    if (ro) ed = `<div class="fld"><label>Nom</label><div><b>FIM</b></div></div><p>${esc(p.desc)}</p><p style="color:#6b6558">Ce profil est fourni avec le générateur : il n’a pas de tableau. Le lecteur applique alors son règlement FIM. Pour partir d’une base, clique sur « Dupliquer ».</p>`;
+    else {
+      const rows = WP_TYPES.filter(t => t[0]).map(([t, l]) => { const r = regRow(p, t); return `<tr data-t="${t}"><td>${esc(l.split(' — ')[0])}</td><td>${sel('mu', r.mu, [['none', 'Aucune'], ['time', 'Temps'], ['pts', 'Points']])}</td><td>${r.mu === 'none' ? '' : `<input data-k="mv" size="4" value="${r.mv}"> ${r.mu === 'pts' ? 'pts' : 'min'}`}</td><td>${REG_TIMED.includes(t) ? sel('ar', r.ar, REG_AR) : '<span style="color:#8a8478">—</span>'}</td><td>${!REG_TIMED.includes(t) || r.ar === 'none' ? '' : `<input data-k="tol" size="3" value="${r.tol}"> min`}</td></tr>`; }).join('');
+      ed = `<div style="display:flex;gap:10px;flex-wrap:wrap"><div class="fld" style="flex:1;min-width:140px"><label>Nom</label><input type="text" data-k="name" value="${esc(p.name)}"></div>
+<div class="fld"><label>Résultat final</label>${sel('res', p.res, [['pts', 'Points'], ['time', 'Temps']])}</div>
+<div class="fld"><label>Conversion</label><span>1 min = <input data-k="k" size="3" value="${p.k}"> pts</span></div></div>
+<div class="fld"><label>Description (visible par les pilotes)</label><textarea data-k="desc">${esc(p.desc || '')}</textarea></div>
+<div class="rgtw" style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
+<div class="rgsp"><b>Temps de spéciale</b> (chrono DSS → ASS)<br>Compté comme ${sel('spm', p.sp.m, [['none', 'Non compté'], ['time', 'Du temps'], ['pts', 'Des points']])}${p.sp.m === 'pts' ? ` &nbsp;1 min de spéciale = <input data-k="spk" size="3" value="${p.sp.k}"> pt` : ''}</div>
+<div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
+    }
+    return `<div style="display:flex;gap:12px;flex-wrap:wrap"><div style="width:190px;flex:none"><div class="rgl">${list}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="mbtn sm" data-a="new">＋ Nouveau</button><button class="mbtn sm" data-a="dup">Dupliquer</button>${ro ? '' : '<button class="mbtn danger sm" data-a="del">Supprimer</button>'}</div></div><div style="flex:1;min-width:260px">${ed}</div></div>
+<style>.rgit{padding:7px 9px;border:1px solid #bdb5a5;border-radius:6px;margin-bottom:4px;cursor:pointer}.rgit.on{background:var(--sand);font-weight:700}.rgit small{color:#8a8478}.rgt{width:100%;border-collapse:collapse;font-size:13px}.rgt th{text-align:left;color:#8a8478;font-weight:600}.rgt td{border-top:1px solid #ddd5c5;padding:3px 4px}.rgt select,.rgt input{font:inherit;padding:3px}.rgsp{margin-top:10px;padding:8px 10px;border:1px solid #bdb5a5;border-radius:6px}</style>`;
+  };
+  const m = openModal('Règlements particuliers', '<div id="rgB"></div>', [{ label: 'Fermer', cls: 'primary' }], { noEsc: false });
+  m.classList.add('wide'); const B = m.querySelector('#rgB');
+  const draw = () => {                                              // le tableau est reconstruit : on garde la position de défilement
+    const sc = () => [m.querySelector('.mb'), B.querySelector('.rgtw')];
+    const pos = sc().map(e => e ? e.scrollTop : 0);
+    B.innerHTML = body();
+    sc().forEach((e, i) => { if (e) e.scrollTop = pos[i]; });
+  };
+  const newId = () => 'p' + Date.now().toString(36);
+  const commit = () => { st.sel = cur; regSave(st); };
+  B.addEventListener('click', e => {
+    const it = e.target.closest('.rgit'); if (it) { cur = it.dataset.id; commit(); draw(); return; }
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const p = cp();
+    if (a.dataset.a === 'new') { const n = { id: newId(), name: 'Nouveau règlement', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, rows: {} }; st.list.push(n); cur = n.id; }
+    else if (a.dataset.a === 'dup') { const n = JSON.parse(JSON.stringify(p.builtin ? { ...p, builtin: false, rows: regFromFim() } : p)); n.id = newId(); n.name = (p.name + ' (copie)').slice(0, 60); delete n.builtin; st.list.push(n); cur = n.id; }
+    else if (a.dataset.a === 'del') { if (!confirm('Supprimer ce profil ?')) return; st.list = st.list.filter(x => x.id !== p.id); cur = st.list.length ? st.list[0].id : 'fim'; }
+    commit(); draw();
+  });
+  B.addEventListener('change', e => {
+    const el = e.target, k = el.dataset.k; if (!k) return;
+    const p = cp(); if (p.builtin) return;
+    const tr = el.closest('tr[data-t]');
+    if (tr) { const r = regRow(p, tr.dataset.t); if (k === 'mu') r.mu = el.value; else if (k === 'ar') r.ar = el.value; else if (k === 'mv') r.mv = regNum(el.value); else if (k === 'tol') r.tol = regNum(el.value); }
+    else if (k === 'name') p.name = el.value.trim().slice(0, 60) || 'Sans nom';
+    else if (k === 'desc') p.desc = el.value;
+    else if (k === 'res') p.res = el.value;
+    else if (k === 'k') p.k = regNum(el.value, 1) || 1;
+    else if (k === 'spm') p.sp.m = el.value;
+    else if (k === 'spk') p.sp.k = regNum(el.value, 1);
+    commit(); if (tr || k === 'name' || k === 'spm') draw();
+  });
+  draw();
+}
 /* ============================================================
    14. Fichiers, boutons, démarrage
    ============================================================ */
@@ -8669,6 +8800,7 @@ $('#moreMenu').addEventListener('click', e => {
   else if (act === 'meas') openMeasure();
   else if (act === 'saveProject') saveProject();
   else if (act === 'prefs') prefsDialog();
+  else if (act === 'reg') regDialog();
   else if (act === 'saveOsm') saveOsm();
   else if (act === 'loadOsm') $('#fileIn').click();
   else if (act === 'theme') cycleTheme();
@@ -8712,7 +8844,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('#dr
 })();
 
 // accès pour les tests automatisés
-window.__rb = { asOfferProject, trNote, noteView, svgToPNG, tulipSVG, pointAt, inv, tulipEditor, measureForNote, openMeasure, measureAtLL, bendList, bendAt, editNote, altDialog, view3D, cleanEle, timeSeries, timeAt, buildGPX, stagesDialog, stageList, addStage, marksDialog, markForm, pickTrack, parseGPX, cutAt, reverseCtrl, mergeFile, reduceDialog, snapDialog, cleanEnds, rebuildFromSegs, S, map, get T() { return T; }, get G() { return G; }, generate: runGenerate, buildGPX, loadText: (txt, name) => loadFile(new File([txt], name || 'test.gpx')), tulipSVG, openSettings, followRoad, ringCircle, dxy, allIGN, importOsm, noteView, addManualNote, notesSVG, renderAll, renderRadii, noteRadii };
+window.__rb = { regDialog, regXml, regLoad, regAll, asOfferProject, trNote, noteView, svgToPNG, tulipSVG, pointAt, inv, tulipEditor, measureForNote, openMeasure, measureAtLL, bendList, bendAt, editNote, altDialog, view3D, cleanEle, timeSeries, timeAt, buildGPX, stagesDialog, stageList, addStage, marksDialog, markForm, pickTrack, parseGPX, cutAt, reverseCtrl, mergeFile, reduceDialog, snapDialog, cleanEnds, rebuildFromSegs, S, map, get T() { return T; }, get G() { return G; }, generate: runGenerate, buildGPX, loadText: (txt, name) => loadFile(new File([txt], name || 'test.gpx')), tulipSVG, openSettings, followRoad, ringCircle, dxy, allIGN, importOsm, noteView, addManualNote, notesSVG, renderAll, renderRadii, noteRadii };
 I18N.onSet(() => { applyNoteLang(); if (S.notes && S.notes.length) { renderRoadbook(); save(); } });      // la langue des notes suit celle de l'interface
 })();
 
