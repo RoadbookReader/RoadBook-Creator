@@ -43,7 +43,8 @@ async function gzipB64(txt) {      // texte -> gzip -> base64 (projet enregistr�
   return btoa(b);
 }
 /* mode : 'proj' = notes + WP + trace + projet · 'full' = notes + WP + trace · 'rb' = notes + WP · 'trace' = trace + WP (sans notes) · 'orient' = WP seulement */
-async function buildGPX(onProg, mode) {
+async function buildGPX(onProg, mode, opts) {
+  opts = opts || {};
   if (mode === true) mode = 'proj'; else if (!mode) mode = 'full';
   const withProject = mode === 'proj', withTrk = mode !== 'rb' && mode !== 'orient', light = mode === 'trace' || mode === 'orient';      // light : seuls les points à waypoint / zone / carburant, sans images de tulipe ni de note
   const NS = 'http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3';
@@ -87,6 +88,7 @@ async function buildGPX(onProg, mode) {
       if (z === 'dz' || z === 'fzdz') { ex.push(`<openrally:dz${attrs(o, c)}/>`); if (n.zone.speed) speed = n.zone.speed; }
     }
     if (speed) ex.push(`<openrally:speed>${speed}</openrally:speed>`);
+    if (opts.desc !== false && n.wp && n.wp.desc && n.wp.desc.trim()) ex.push(`<rbgen:wpdesc><![CDATA[${n.wp.desc.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]></rbgen:wpdesc>`);      // texte à lire dans le lecteur quand le waypoint est validé
     if (n.fuel) ex.push('<openrally:fuel/>');
     o.push(`  <wpt lat="${n.lat.toFixed(6)}" lon="${n.lon.toFixed(6)}">\n    <name>${i + 1}</name>\n    <desc>${xmlEsc((n.text || '').replace(/\n/g, ' / '))}</desc>\n    <extensions>\n      ${ex.join('\n      ')}\n    </extensions>\n  </wpt>`);
   }
@@ -112,20 +114,22 @@ async function buildGPX(onProg, mode) {
 async function exportGPX() {
   if (!T || !S.notes.length) { toast('Génère d’abord le roadbook.', 'err'); return; }
   let pk = 0; try { pk = Math.round((await gzipB64(JSON.stringify(snapshot()))).length / 1024); } catch (e) { }
+  const nDesc = S.notes.filter(n => n.wp && n.wp.desc && n.wp.desc.trim()).length;
   const opt = (v, t, d, w, on) => `<label class="xopt${on ? ' on' : ''}"><input type="radio" name="xgpx" value="${v}"${on ? ' checked' : ''}><div><b>${t}</b><div class="xd">${d}</div>${w ? `<div class="xw">${w}</div>` : ''}</div></label>`;
   const m = openModal('Exporter le GPX', `<div style="font-size:13px;color:#6b6558;margin-bottom:10px">Que veux-tu mettre dans le fichier ?</div>` +
     opt('proj', 'GPX Roadbook + Projet', 'Notes + waypoints + trace + projet. Pour le rouvrir plus tard dans l’éditeur et le modifier. Le lecteur ignore le projet.' + (pk ? ` Ajoute environ ${pk >= 1024 ? (pk / 1024).toFixed(1).replace('.', ',') + ' Mo' : pk + ' Ko'}.` : ''), '', false) +
     opt('full', 'GPX Roadbook complet', 'Notes + waypoints + trace. Pour ton lecteur et pour les pilotes. Fichier léger.', 'Aucune possibilité de reprendre et modifier le roadbook.', true) +
     opt('rb', 'GPX Mode Roadbook', 'Notes + waypoints, sans la trace.', '', false) +
     opt('trace', 'GPX Mode Trace', 'Trace + waypoints, sans les notes du roadbook. Très léger.', '', false) +
-    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false),
-    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full') }], { noEsc: false });
+    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false) +
+    (nDesc ? `<label class="xopt on" style="margin-top:8px"><input type="checkbox" id="xdesc" checked><div><b>${gpsOffT('Inclure les descriptions de waypoint', 'Include waypoint descriptions')} (${nDesc})</b><div class="xd">${gpsOffT('Le lecteur les affiche dans une fenêtre quand le waypoint est validé. Décoche pour un GPX sans ces textes (le projet les garde).', 'The reader shows them in a window when the waypoint is validated. Untick for a GPX without these texts (the project keeps them).')}</div><div class="xw">${gpsOffT('Le texte est lisible en clair dans le fichier GPX.', 'The text is readable in plain form in the GPX file.')}</div></div></label>` : ''),
+    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full', { desc: !mm.querySelector('#xdesc') || mm.querySelector('#xdesc').checked }) }], { noEsc: false });
   m.querySelectorAll('input[name=xgpx]').forEach(r => r.onchange = () => m.querySelectorAll('.xopt').forEach(l => l.classList.toggle('on', l.querySelector('input').checked)));
 }
-async function runExport(mode) {
+async function runExport(mode, opts) {
   const m = openModal('Export GPX OpenRally', `<div id="pTxt">Dessin des tulipes…</div><div class="prog"><div id="pBar"></div></div>`, [], { noEsc: true });
   try {
-    const gpx = await buildGPX((i, n) => { const b = m.querySelector('#pBar'); if (b) b.style.width = Math.round(100 * i / n) + '%'; }, mode);
+    const gpx = await buildGPX((i, n) => { const b = m.querySelector('#pBar'); if (b) b.style.width = Math.round(100 * i / n) + '%'; }, mode, opts);
     closeModal();
     download(fileName('.gpx'), gpx, 'application/gpx+xml');
     toast(mode === 'proj' ? 'GPX exporté avec le projet : rouvre-le ici pour modifier le roadbook.' : mode === 'trace' ? 'GPX exporté : trace et waypoints, sans les notes.' : mode === 'orient' ? 'GPX exporté : waypoints seulement.' : mode === 'rb' ? 'GPX exporté : notes et waypoints, sans la trace.' : 'GPX OpenRally exporté : ouvre-le dans ton lecteur de roadbook.', 'ok');
