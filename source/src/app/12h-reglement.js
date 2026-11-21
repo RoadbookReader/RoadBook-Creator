@@ -1,6 +1,7 @@
 /* ---------- Règlements particuliers : profils de pénalités par type de WP, écrits dans le GPX (<rbgen:rules>) ---------- */
 const REG_KEY = 'rbgen.reg';
 const REG_FIM = { id: 'fim', name: 'FIM', builtin: true, desc: 'Règlement FIM 2026 appliqué par le lecteur : départ anticipé, CH (1 min par minute), CP manqué 15 min, temps maximum de spéciale…', res: 'time', k: 2, sp: { m: 'time', k: 1 }, rows: {} };
+const REG_TIMED = ['ch', 'dss', 'ass', 'dt', 'ft', 'dn', 'fn'];      // seuls ces types ont une heure : avance / retard possible
 const REG_AR = [['none', 'Aucune'], ['late-time', 'Retard → temps'], ['both-time', 'Avance + retard → temps'], ['late-pts', 'Retard → points'], ['both-pts', 'Avance + retard → points']];
 function regNum(v, d) { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) && x >= 0 ? x : (d || 0); }
 function regLoad() {
@@ -27,10 +28,11 @@ function regXml(p) {                                             // bloc GPX ; p
   if (p.sp && p.sp.m !== 'none') o.push(`        <rbgen:special mode="${p.sp.m === 'pts' ? 'points' : 'time'}" ptsPerMin="${regNum(p.sp.k, 1)}"/>`);
   for (const [t] of WP_TYPES) {
     if (!t) continue;
-    const r = p.rows[t]; if (!r || (r.mu === 'none' && r.ar === 'none')) continue;
+    const r = p.rows[t]; const tm = REG_TIMED.includes(t), ar = tm && r ? r.ar : 'none';
+    if (!r || (r.mu === 'none' && ar === 'none')) continue;
     let a = ` type="${t}"`;
     if (r.mu !== 'none') a += ` miss="${r.mu === 'pts' ? 'points' : 'time'}" value="${regNum(r.mv)}"`;
-    if (r.ar !== 'none') a += ` timing="${r.ar}" tol="${regNum(r.tol)}"`;
+    if (ar !== 'none') a += ` timing="${ar}" tol="${regNum(r.tol)}"`;
     o.push(`        <rbgen:wp${a}/>`);
   }
   o.push('      </rbgen:rules>');
@@ -46,7 +48,7 @@ function regDialog() {
     let ed;
     if (ro) ed = `<div class="fld"><label>Nom</label><div><b>FIM</b></div></div><p>${esc(p.desc)}</p><p style="color:#6b6558">Ce profil est fourni avec le générateur : il n’a pas de tableau. Le lecteur applique alors son règlement FIM. Pour partir d’une base, clique sur « Dupliquer ».</p>`;
     else {
-      const rows = WP_TYPES.filter(t => t[0]).map(([t, l]) => { const r = regRow(p, t); return `<tr data-t="${t}"><td>${esc(l.split(' — ')[0])}</td><td>${sel('mu', r.mu, [['none', 'Aucune'], ['time', 'Temps'], ['pts', 'Points']])}</td><td>${r.mu === 'none' ? '' : `<input data-k="mv" size="4" value="${r.mv}"> ${r.mu === 'pts' ? 'pts' : 'min'}`}</td><td>${sel('ar', r.ar, REG_AR)}</td><td>${r.ar === 'none' ? '' : `<input data-k="tol" size="3" value="${r.tol}"> min`}</td></tr>`; }).join('');
+      const rows = WP_TYPES.filter(t => t[0]).map(([t, l]) => { const r = regRow(p, t); return `<tr data-t="${t}"><td>${esc(l.split(' — ')[0])}</td><td>${sel('mu', r.mu, [['none', 'Aucune'], ['time', 'Temps'], ['pts', 'Points']])}</td><td>${r.mu === 'none' ? '' : `<input data-k="mv" size="4" value="${r.mv}"> ${r.mu === 'pts' ? 'pts' : 'min'}`}</td><td>${REG_TIMED.includes(t) ? sel('ar', r.ar, REG_AR) : '<span style="color:#8a8478">—</span>'}</td><td>${!REG_TIMED.includes(t) || r.ar === 'none' ? '' : `<input data-k="tol" size="3" value="${r.tol}"> min`}</td></tr>`; }).join('');
       ed = `<div style="display:flex;gap:10px;flex-wrap:wrap"><div class="fld" style="flex:1;min-width:140px"><label>Nom</label><input type="text" data-k="name" value="${esc(p.name)}"></div>
 <div class="fld"><label>Résultat final</label>${sel('res', p.res, [['pts', 'Points'], ['time', 'Temps']])}</div>
 <div class="fld"><label>Conversion</label><span>1 min = <input data-k="k" size="3" value="${p.k}"> pts</span></div></div>
