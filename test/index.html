@@ -1057,7 +1057,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1449</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1450</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1101,7 +1101,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261121.1449 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261121.1450 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -2999,6 +2999,12 @@ Object.assign(I18N_EN, {
   'Des points': 'As points',
   'Du temps (barème FIM classique)': 'As time (classic FIM scale)',
   'Des points (barème FIM converti)': 'As points (converted FIM scale)',
+  'Temps de spéciale': 'Special stage time',
+  '(chrono DSS → ASS)': '(DSS → ASS stopwatch)',
+  'Compté comme': 'Counted as',
+  'Excès de vitesse': 'Speeding',
+  '(toutes les limites, par impulsion)': '(all limits, per pulse)',
+  'Barème FIM par impulsion : 1 à 5 km/h = 10 s ; 6 à 15 = 1 min ; 16 à 40 = 2 min ; plus de 40 = 6 min. En points, avec la conversion du profil.': 'FIM scale per pulse: 1–5 km/h = 10 s; 6–15 = 1 min; 16–40 = 2 min; over 40 = 6 min. In points, using the profile conversion.',
   'Pénalité de distance': 'Distance penalty',
   'Compter une pénalité de distance': 'Apply a distance penalty',
   'points pour': 'points per',
@@ -8163,7 +8169,7 @@ function regDialog() {
 <div class="fld"><label>Description (visible par les pilotes)</label><textarea data-k="desc">${esc(p.desc || '')}</textarea></div>
 <div class="rgtw" style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
 <div class="rgsp"><b>Temps de spéciale</b> (chrono DSS → ASS)<br>Compté comme ${sel('spm', p.sp.m, [['none', 'Non compté'], ['time', 'Du temps'], ['pts', 'Des points']])}${p.sp.m === 'pts' ? ` &nbsp;1 min de spéciale = <input data-k="spk" size="3" value="${p.sp.k}"> pt` : ''}</div>
-<div class="rgsp"><b>Excès de vitesse</b> (toutes les limites, par impulsion)<br>Compté comme ${sel('spd', p.spd || 'none', [['none', 'Non compté'], ['time', 'Du temps (barème FIM classique)'], ['pts', 'Des points (barème FIM converti)']])}<div style="color:#6b6558;font-size:12px;margin-top:3px">Barème FIM par impulsion : 1 à 5 km/h = 10 s ; 6 à 15 = 1 min ; 16 à 40 = 2 min ; plus de 40 = 6 min. En points, avec la conversion du profil (1 min = ${p.k} pts).</div></div>
+<div class="rgsp"><b>Excès de vitesse</b> (toutes les limites, par impulsion)<br>Compté comme ${sel('spd', p.spd || 'none', [['none', 'Non compté'], ['time', 'Du temps (barème FIM classique)'], ['pts', 'Des points (barème FIM converti)']])}<div style="color:#6b6558;font-size:12px;margin-top:3px">Barème FIM par impulsion : 1 à 5 km/h = 10 s ; 6 à 15 = 1 min ; 16 à 40 = 2 min ; plus de 40 = 6 min. En points, avec la conversion du profil.</div></div>
 <div class="rgsp"><b>Pénalité de distance</b><br><label><input type="checkbox" data-k="dson"${p.dist && p.dist.on ? ' checked' : ''}> Compter une pénalité de distance</label>${p.dist && p.dist.on ? `<div style="margin-top:4px"><input data-k="dx" size="4" value="${p.dist.x}"> points pour <input data-k="dy" size="5" value="${p.dist.y}"> m</div><div style="color:#6b6558;font-size:12px;margin-top:3px">Par tranche entamée : "X" points chaque fois que "Y" mètres sont commencés. En résultat « Temps », les points sont convertis avec la conversion du profil.</div>` : ''}</div>
 <div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
     }
