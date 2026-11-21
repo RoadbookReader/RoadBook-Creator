@@ -260,5 +260,9 @@ Object.assign(I18N_EN, {
   'Des points': 'As points',
   'Du temps (barème FIM classique)': 'As time (classic FIM scale)',
   'Des points (barème FIM converti)': 'As points (converted FIM scale)',
+  'Pénalité de distance': 'Distance penalty',
+  'Compter une pénalité de distance': 'Apply a distance penalty',
+  'points pour': 'points per',
+  'La distance à pénaliser est saisie à la main dans le lecteur. En résultat « Temps », les points sont convertis avec la conversion du profil.': 'The distance to penalise is entered by hand in the reader. With a “Time” result, points are converted using the profile conversion.',
   'Un type sans ligne renseignée ne donne aucune pénalité.': 'A type with no line filled in gives no penalty.',
 });
