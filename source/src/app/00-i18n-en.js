@@ -353,7 +353,7 @@ const I18N_EN = {
 "WPS — sécurité": "WPS — safety",
 "WPE — éclipse": "WPE — eclipse",
 "WPC — contrôle": "WPC — control",
-"WPP — passage": "WPP — passage",
+"WPP — précision": "WPP — precision",
 "CP — contrôle de passage": "CP — passage control",
 "CH — contrôle horaire (liaison)": "CH — time control (liaison)",
 "DSS — départ spéciale": "DSS — special stage start",

@@ -332,7 +332,7 @@ function notesSVG(n) {
 }
 const WP_TYPES = [
   ['', 'Aucun'], ['wpv', 'WPV — visible'], ['wpm', 'WPM — masqué'], ['wps', 'WPS — sécurité'], ['wpe', 'WPE — éclipse'],
-  ['wpc', 'WPC — contrôle'], ['wpn', 'WPN — navigation'], ['wpp', 'WPP — passage'], ['cp', 'CP — contrôle de passage'], ['ch', 'CH — contrôle horaire (liaison)'], ['dss', 'DSS — départ spéciale'], ['ass', 'ASS — arrivée spéciale'],
+  ['wpc', 'WPC — contrôle'], ['wpn', 'WPN — navigation'], ['wpp', 'WPP — précision'], ['cp', 'CP — contrôle de passage'], ['ch', 'CH — contrôle horaire (liaison)'], ['dss', 'DSS — départ spéciale'], ['ass', 'ASS — arrivée spéciale'],
   ['dn', 'DN — début neutralisation'], ['fn', 'FN — fin neutralisation'], ['dt', 'DT — début liaison'], ['ft', 'FT — fin liaison']
 ];
 const ZONE_TYPES = [['', 'Aucune'], ['dz', 'DZ — début de zone'], ['fz', 'FZ — fin de zone'], ['fzdz', 'FZ + DZ — fin d’une zone et début de la suivante']];
