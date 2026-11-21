@@ -577,8 +577,8 @@ function rowInner(n, i, par, f, screen) {
   while (lk.length && lh > 3.5 && lr * (lh + 0.6) + need > avail) { lh -= 0.5; lr = lexRows(lk, lh, 29.6, 0.6); }
   const lx = lk.length ? `<div class="lx" style="--lh:${lh}cqw">${lk.map(k => `<img src="${FIA_LEX[k].d}" alt="${esc(lexName(k))}" title="${esc(lexTitle(k))}">`).join('')}</div>` : '';
   return `<div class="k k1" style="background:${bg}"><div class="tot">${kmFr(n.s)}</div><div class="bl"><div class="par">${kmFr(par)}</div>${f.close ? ARROW_SVG : ''}</div>${sym}<div class="br"><div class="num">${i + 1}</div></div></div>`
-    + `<div class="k k2">${tulipSVG(n.tulip, 200)}${freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
-    + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>${cap}${capOff}${sg}`
+    + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
+    + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${n.imgN ? `${big}${top}<img class="pim" src="${n.imgN}" alt="">` : `${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>`}${cap}${capOff}${sg}`
     + (screen && (!n.auto || n.moved) ? '<div class="man">manuelle</div>' : '')
     + (screen ? `<div class="acts">${whyOf(n) ? '<button data-a="why" title="Pourquoi cette note ?">?</button>' : ''}<button data-a="edit" title="Modifier la note">✎</button><button data-a="del" title="Supprimer la note">🗑</button></div>` : '') + `</div>`
     + (f.zone ? `<div class="fr zone${f.zTop ? ' zt' : ''}${f.zBot ? ' zb' : ''}"></div>` : '') + (f.red ? '<div class="fr red"></div>' : '');
@@ -717,6 +717,8 @@ function editNote(id, isNew) {
     </div>
     <label class="chk"><input type="checkbox" id="eShowCap"${n.showCap ? ' checked' : ''}> Afficher le CAP sur cette note</label>
     <label class="chk"><input type="checkbox" id="eFuel"${n.fuel ? ' checked' : ''}> ⛽ Carburant (ravitaillement)</label>
+    ${n.imgT ? '<label class="chk"><input type="checkbox" id="eDropT"> Remplacer l’image de la tulipe (importée) par le dessin du générateur</label>' : ''}
+    ${n.imgN ? '<label class="chk"><input type="checkbox" id="eDropN"> Remplacer l’image de la 3e case (importée) par la note écrite du générateur</label>' : ''}
     </div>
     <div class="enp" data-p="1">
     <div class="fld" style="max-width:260px"><label for="eR">Rayon dessiné dans la tulipe (m)</label><input id="eR" type="number" min="20" max="150" step="5" value="${Math.round(n.tulip && n.tulip.R || S.settings.tulipR)}"></div>
@@ -786,6 +788,8 @@ function editNote(id, isNew) {
       n.zone = zt ? { type: zt } : null;
       if (n.zone && zt !== 'fz') { const v = parseInt($('#eSpeed').value, 10); if (v > 0) n.zone.speed = v; }
       n.fuel = $('#eFuel').checked;
+      if ($('#eDropT') && $('#eDropT').checked) delete n.imgT;
+      if ($('#eDropN') && $('#eDropN').checked) delete n.imgN;
       n.lex = lexSel.slice(); if (!n.lex.length) delete n.lex;
       n.sym = symList.filter(q => q.tx == null || String(q.tx).trim()).map(q => { const o = { ...q }; delete o.sized; if (!o.rot) delete o.rot; if (!o.col) delete o.col; if (!o.bd) delete o.bd; return o; }); if (!n.sym.length) delete n.sym;
       if (tp) { n.tpos = { x: tp.x, y: tp.y, h: tp.h }; if (tp.rot) n.tpos.rot = tp.rot; } else delete n.tpos;

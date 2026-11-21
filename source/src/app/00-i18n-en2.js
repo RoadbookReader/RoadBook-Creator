@@ -1,5 +1,9 @@
 // Dictionnaire FR → EN : compléments (relevés par le test « textes restés en français »)
 Object.assign(I18N_EN, {
+  'Importer un roadbook d’une autre plateforme': 'Import a roadbook from another platform',
+  'Remplacer l’image de la tulipe (importée) par le dessin du générateur': 'Replace the imported tulip image with the generator drawing',
+  'Remplacer l’image de la 3e case (importée) par la note écrite du générateur': 'Replace the imported 3rd-box image with the generator note',
+  'Importer': 'Import',
 "Clique sur la carte pour poser des points. Glisse un point pour le déplacer, clique dessus pour le retirer. Tire sur la trace pour y ajouter un point. Main levée : maintiens la barre espace (ou le bouton) et dessine.": "Click on the map to place points. Drag a point to move it, click it to remove it. Drag the track to add a point. Freehand: hold the space bar (or the button) and draw.",
 "Clique sur la carte pour poser des points. Glisse un point pour le déplacer, clique dessus pour le retirer. Tire sur la trace pour y ajouter un point.": "Click on the map to place points. Drag a point to move it, click it to remove it. Drag the track to add a point.",
 ": charge la trace de ton parcours": ": load the track of your route",

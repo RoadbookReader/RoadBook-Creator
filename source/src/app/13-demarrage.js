@@ -29,6 +29,14 @@ async function loadFile(file) {
       } catch (e) { console.warn('projet du GPX illisible', e); }
     }
     const g = parseGPX(txt);
+    if (g.ll.length < 2 && g.wpts) {      // GPX d'une autre plateforme : waypoints (et images) sans trace
+      const r = importWptGPX(txt, file.name);
+      const ok = await new Promise(res => openModal('Importer un roadbook d’une autre plateforme', gpsOffT(
+        `<p>Ce fichier ne contient <b>pas de trace</b>, seulement <b>${r.notes.length} waypoints</b>${r.nImg ? ' avec leurs <b>images</b> de tulipe et de notes' : ''}.</p><p>Chaque waypoint devient une note ; les marqueurs (DSS, ASS, WPM, WPV…), distances, caps et dangers sont repris${r.nImg ? ', les images sont gardées telles quelles' : ''}.</p><p><b>Attention :</b> le tracé affiché est provisoire (les waypoints reliés en ligne droite). Ne l’utilise pas avec « Générer le roadbook ».</p>`,
+        `<p>This file has <b>no track</b>, only <b>${r.notes.length} waypoints</b>${r.nImg ? ' with their tulip and notes <b>images</b>' : ''}.</p><p>Each waypoint becomes a note; markers (DSS, ASS, WPM, WPV…), distances, headings and dangers are kept${r.nImg ? ', and the images are kept as they are' : ''}.</p><p><b>Note:</b> the track shown is provisional (waypoints joined by straight lines). Do not use “Generate the roadbook” on it.</p>`), [{ label: 'Annuler', onClick: () => res(false) }, { label: 'Importer', cls: 'primary', onClick: () => res(true) }]));
+      if (!ok) return;
+      applyWptImport(r); toast(gpsOffT(`${r.notes.length} notes importées (tracé provisoire).`, `${r.notes.length} notes imported (provisional track).`), 'ok'); return;
+    }
     if (g.ll.length < 2) throw new Error(g.wpts ? 'Ce GPX ne contient que des waypoints, pas de trace (trk). Utilise un GPX avec la trace du parcours, ou dessine-le.' : 'Aucune trace trouvée dans ce fichier.');
     if (g.trks.length > 1) { const pk = await pickTrack(g); if (!pk) return; g.ll = pk.ll; if (pk.name) g.name = pk.name; }
     if (drawing) setDrawing(false);

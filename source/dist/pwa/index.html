@@ -1050,6 +1050,8 @@ body.dragNote .leaflet-tooltip{display:none}
 
 #modal.wide{width:min(920px,96vw);max-width:96vw}
 .mbtn.sm{padding:5px 9px;font-size:13px}
+
+.k .pim{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
 </style>
 </head>
 <body>
@@ -1057,7 +1059,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1711</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1737</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1101,7 +1103,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261121.1711</div>
+          <div class="ver">Version v0.261121.1737</div>
         </div>
       </div>
     </div>
@@ -2739,6 +2741,10 @@ const I18N_EN = {
 };
 // Dictionnaire FR → EN : compléments (relevés par le test « textes restés en français »)
 Object.assign(I18N_EN, {
+  'Importer un roadbook d’une autre plateforme': 'Import a roadbook from another platform',
+  'Remplacer l’image de la tulipe (importée) par le dessin du générateur': 'Replace the imported tulip image with the generator drawing',
+  'Remplacer l’image de la 3e case (importée) par la note écrite du générateur': 'Replace the imported 3rd-box image with the generator note',
+  'Importer': 'Import',
 "Clique sur la carte pour poser des points. Glisse un point pour le déplacer, clique dessus pour le retirer. Tire sur la trace pour y ajouter un point. Main levée : maintiens la barre espace (ou le bouton) et dessine.": "Click on the map to place points. Drag a point to move it, click it to remove it. Drag the track to add a point. Freehand: hold the space bar (or the button) and draw.",
 "Clique sur la carte pour poser des points. Glisse un point pour le déplacer, clique dessus pour le retirer. Tire sur la trace pour y ajouter un point.": "Click on the map to place points. Drag a point to move it, click it to remove it. Drag the track to add a point.",
 ": charge la trace de ton parcours": ": load the track of your route",
@@ -6682,8 +6688,8 @@ function rowInner(n, i, par, f, screen) {
   while (lk.length && lh > 3.5 && lr * (lh + 0.6) + need > avail) { lh -= 0.5; lr = lexRows(lk, lh, 29.6, 0.6); }
   const lx = lk.length ? `<div class="lx" style="--lh:${lh}cqw">${lk.map(k => `<img src="${FIA_LEX[k].d}" alt="${esc(lexName(k))}" title="${esc(lexTitle(k))}">`).join('')}</div>` : '';
   return `<div class="k k1" style="background:${bg}"><div class="tot">${kmFr(n.s)}</div><div class="bl"><div class="par">${kmFr(par)}</div>${f.close ? ARROW_SVG : ''}</div>${sym}<div class="br"><div class="num">${i + 1}</div></div></div>`
-    + `<div class="k k2">${tulipSVG(n.tulip, 200)}${freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
-    + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>${cap}${capOff}${sg}`
+    + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
+    + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${n.imgN ? `${big}${top}<img class="pim" src="${n.imgN}" alt="">` : `${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>`}${cap}${capOff}${sg}`
     + (screen && (!n.auto || n.moved) ? '<div class="man">manuelle</div>' : '')
     + (screen ? `<div class="acts">${whyOf(n) ? '<button data-a="why" title="Pourquoi cette note ?">?</button>' : ''}<button data-a="edit" title="Modifier la note">✎</button><button data-a="del" title="Supprimer la note">🗑</button></div>` : '') + `</div>`
     + (f.zone ? `<div class="fr zone${f.zTop ? ' zt' : ''}${f.zBot ? ' zb' : ''}"></div>` : '') + (f.red ? '<div class="fr red"></div>' : '');
@@ -6822,6 +6828,8 @@ function editNote(id, isNew) {
     </div>
     <label class="chk"><input type="checkbox" id="eShowCap"${n.showCap ? ' checked' : ''}> Afficher le CAP sur cette note</label>
     <label class="chk"><input type="checkbox" id="eFuel"${n.fuel ? ' checked' : ''}> ⛽ Carburant (ravitaillement)</label>
+    ${n.imgT ? '<label class="chk"><input type="checkbox" id="eDropT"> Remplacer l’image de la tulipe (importée) par le dessin du générateur</label>' : ''}
+    ${n.imgN ? '<label class="chk"><input type="checkbox" id="eDropN"> Remplacer l’image de la 3e case (importée) par la note écrite du générateur</label>' : ''}
     </div>
     <div class="enp" data-p="1">
     <div class="fld" style="max-width:260px"><label for="eR">Rayon dessiné dans la tulipe (m)</label><input id="eR" type="number" min="20" max="150" step="5" value="${Math.round(n.tulip && n.tulip.R || S.settings.tulipR)}"></div>
@@ -6891,6 +6899,8 @@ function editNote(id, isNew) {
       n.zone = zt ? { type: zt } : null;
       if (n.zone && zt !== 'fz') { const v = parseInt($('#eSpeed').value, 10); if (v > 0) n.zone.speed = v; }
       n.fuel = $('#eFuel').checked;
+      if ($('#eDropT') && $('#eDropT').checked) delete n.imgT;
+      if ($('#eDropN') && $('#eDropN').checked) delete n.imgN;
       n.lex = lexSel.slice(); if (!n.lex.length) delete n.lex;
       n.sym = symList.filter(q => q.tx == null || String(q.tx).trim()).map(q => { const o = { ...q }; delete o.sized; if (!o.rot) delete o.rot; if (!o.col) delete o.col; if (!o.bd) delete o.bd; return o; }); if (!n.sym.length) delete n.sym;
       if (tp) { n.tpos = { x: tp.x, y: tp.y, h: tp.h }; if (tp.rot) n.tpos.rot = tp.rot; } else delete n.tpos;
@@ -7321,8 +7331,8 @@ async function buildGPX(onProg, mode, opts) {
     const n = S.notes[i];
     onProg && onProg(i, S.notes.length);
     if (light && !(n.wp || n.zone || n.fuel)) continue;
-    const tul = light ? '' : await svgToPNG(tulipSVG(n.tulip, 300, n.sym), 300, 300);
-    const nts = light ? '' : await svgToPNG(notesSVG(n), 400, 300);
+    const tul = light ? '' : n.imgT || await svgToPNG(tulipSVG(n.tulip, 300, n.sym), 300, 300);      // image importée (autre logiciel) : réécrite telle quelle
+    const nts = light ? '' : n.imgN || await svgToPNG(notesSVG(n), 400, 300);
     const ex = [];
     ex.push(`<openrally:distance>${km(n.s)}</openrally:distance>`);
     if (!light) { ex.push(`<openrally:tulip><![CDATA[${tul}]]></openrally:tulip>`); ex.push(`<openrally:notes><![CDATA[${nts}]]></openrally:notes>`); }
@@ -8219,6 +8229,68 @@ function regDialog() {
   draw();
 }
 /* ============================================================
+   Import d'un GPX venu d'une autre plateforme : waypoints + images de tulipe / de notes, sans trace
+   Chaque waypoint devient une note ; les images (openrally:tulip / openrally:notes) sont gardées telles quelles
+   (n.imgT, n.imgN), affichées à la place des cases dessinées et réécrites à l'export.
+   Le tracé provisoire relie les waypoints en ligne droite (à remplacer plus tard).
+   ============================================================ */
+function importWptGPX(txt, fileName) {
+  const doc = new DOMParser().parseFromString(txt, 'application/xml');
+  const kids = (el, ln) => Array.from(el.children).filter(c => c.localName === ln);
+  const first = (el, ln) => kids(el, ln)[0];
+  const num = v => { const x = parseFloat(v); return isFinite(x) ? x : null; };
+  const rad = v => { const x = num(v); return x != null && x < 1e7 ? x : null; };      // « infini » (1.79e308) = pas de rayon
+  const rows = [];
+  for (const w of Array.from(doc.getElementsByTagNameNS('*', 'wpt'))) {
+    const lat = num(w.getAttribute('lat')), lon = num(w.getAttribute('lon')); if (lat == null || lon == null) continue;
+    const ext = first(w, 'extensions'), ex = ext ? Array.from(ext.children) : [];
+    const g = ln => ex.find(e => e.localName === ln);
+    const txtOf = ln => { const e = g(ln); return e ? e.textContent.trim() : ''; };
+    const r = { lat, lon, name: (first(w, 'name') || {}).textContent || '', desc: ((first(w, 'desc') || {}).textContent || '').trim(), g, txtOf };
+    if (!ext || (!g('distance') && !g('tulip') && !g('notes') && !ex.some(e => /^(dss|ass|wp.|checkpoint|dt|ft|dn|fn|dz|fz|fuel|danger|cap)$/.test(e.localName)))) { r.skip = true; }
+    rows.push(r);
+  }
+  const R = rows.filter(r => !r.skip);
+  if (!R.length) throw new Error('Aucun waypoint exploitable dans ce fichier.');
+  let hasDist = R.every(r => num(r.txtOf('distance')) != null);
+  const ll = R.map(r => [r.lat, r.lon]);
+  const out = []; let nid = 1, cum = 0;
+  R.forEach((r, i) => {
+    if (i) cum += haversine(ll[i - 1], ll[i]);
+    const n = { id: nid++, s: hasDist ? Math.round(num(r.txtOf('distance')) * 1000 * 10) / 10 : Math.round(cum * 10) / 10, lat: +r.lat.toFixed(6), lon: +r.lon.toFixed(6),
+      text: '', cap: null, showCap: false, danger: 0, wp: null, auto: false, edited: true, kind: i === 0 ? 'start' : i === R.length - 1 ? 'end' : 'info', tulip: null };
+    const t = r.txtOf('tulip'), nt = r.txtOf('notes');
+    if (/^data:image\//.test(t)) n.imgT = t;
+    if (/^data:image\//.test(nt)) n.imgN = nt;
+    const cap = num(r.txtOf('cap')); if (cap != null) { n.cap = cap; n.showCap = true; }
+    const dg = num(r.txtOf('danger')); if (dg) n.danger = Math.max(0, Math.min(3, Math.round(dg)));
+    if (r.g('fuel')) n.fuel = true;
+    const at = ln => { const e = r.g(ln); return e ? { open: rad(e.getAttribute('open')), clear: rad(e.getAttribute('clear')), name: e.getAttribute('name') || '' } : null; };
+    for (const t0 of ['dss', 'ass', 'wpm', 'wpc', 'wps', 'wpn', 'wpp', 'wpv', 'wpe', 'dt', 'ft', 'dn', 'fn']) {
+      const a = at(t0); if (!a) continue;
+      n.wp = { type: t0, name: a.name }; if (a.open != null) n.wp.open = a.open; if (a.clear != null) n.wp.clear = a.clear; break;
+    }
+    if (!n.wp) { const a = at('checkpoint'); if (a) { n.wp = { type: a.open || a.clear ? 'cp' : 'ch', name: a.name }; if (a.open != null && a.open) n.wp.open = a.open; if (a.clear) n.wp.clear = a.clear; } }
+    const tc = r.g('timecontrol'); if (tc && n.wp) { const al = num(tc.getAttribute('allowed')); if (al > 0) n.wp.limit = al; }
+    const sp = num(r.txtOf('speed')); if (sp && n.wp) n.wp.speed = sp;
+    const nu = num(r.txtOf('neutralization')); if (nu != null && n.wp && n.wp.type === 'dn') n.wp.dur = nu / 60;
+    const dz = at('dz'), fz = at('fz');
+    if (dz || fz) n.zone = { type: dz && fz ? 'fzdz' : dz ? 'dz' : 'fz', speed: sp || undefined };
+    if (r.desc && !(n.imgN)) n.text = r.desc;
+    out.push(n);
+  });
+  const md = doc.getElementsByTagNameNS('*', 'metadata')[0], mn = md && Array.from(md.children).find(c => c.localName === 'name');
+  return { notes: out, ll, name: mn && mn.textContent.trim() || fileName.replace(/\.gpx$/i, ''), nImg: out.filter(n => n.imgT || n.imgN).length, skipped: rows.length - R.length };
+}
+function applyWptImport(r) {
+  if (drawing) setDrawing(false);
+  S.stages = []; S.ele = null; S.marks = []; if (S.timing) S.timing.ss = {}; renderMarks();
+  S.src = 'gpx'; S.ctrl = []; S.segs = []; S.stale = false; S.sel = null; S.nextId = r.notes.length + 1;
+  S.name = r.name; $('#rbName').value = S.name;
+  setTrack(r.ll, true); S.notes = r.notes;
+  HIST.length = 0; renderAll(); renderTrack(true); setDirty(false);
+}
+/* ============================================================
    14. Fichiers, boutons, démarrage
    ============================================================ */
 async function readFileText(file) {
@@ -8249,6 +8321,14 @@ async function loadFile(file) {
       } catch (e) { console.warn('projet du GPX illisible', e); }
     }
     const g = parseGPX(txt);
+    if (g.ll.length < 2 && g.wpts) {      // GPX d'une autre plateforme : waypoints (et images) sans trace
+      const r = importWptGPX(txt, file.name);
+      const ok = await new Promise(res => openModal('Importer un roadbook d’une autre plateforme', gpsOffT(
+        `<p>Ce fichier ne contient <b>pas de trace</b>, seulement <b>${r.notes.length} waypoints</b>${r.nImg ? ' avec leurs <b>images</b> de tulipe et de notes' : ''}.</p><p>Chaque waypoint devient une note ; les marqueurs (DSS, ASS, WPM, WPV…), distances, caps et dangers sont repris${r.nImg ? ', les images sont gardées telles quelles' : ''}.</p><p><b>Attention :</b> le tracé affiché est provisoire (les waypoints reliés en ligne droite). Ne l’utilise pas avec « Générer le roadbook ».</p>`,
+        `<p>This file has <b>no track</b>, only <b>${r.notes.length} waypoints</b>${r.nImg ? ' with their tulip and notes <b>images</b>' : ''}.</p><p>Each waypoint becomes a note; markers (DSS, ASS, WPM, WPV…), distances, headings and dangers are kept${r.nImg ? ', and the images are kept as they are' : ''}.</p><p><b>Note:</b> the track shown is provisional (waypoints joined by straight lines). Do not use “Generate the roadbook” on it.</p>`), [{ label: 'Annuler', onClick: () => res(false) }, { label: 'Importer', cls: 'primary', onClick: () => res(true) }]));
+      if (!ok) return;
+      applyWptImport(r); toast(gpsOffT(`${r.notes.length} notes importées (tracé provisoire).`, `${r.notes.length} notes imported (provisional track).`), 'ok'); return;
+    }
     if (g.ll.length < 2) throw new Error(g.wpts ? 'Ce GPX ne contient que des waypoints, pas de trace (trk). Utilise un GPX avec la trace du parcours, ou dessine-le.' : 'Aucune trace trouvée dans ce fichier.');
     if (g.trks.length > 1) { const pk = await pickTrack(g); if (!pk) return; g.ll = pk.ll; if (pk.name) g.name = pk.name; }
     if (drawing) setDrawing(false);

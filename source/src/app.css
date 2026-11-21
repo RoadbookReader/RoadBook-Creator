@@ -379,3 +379,5 @@ body.dragNote .leaflet-tooltip{display:none}
 
 #modal.wide{width:min(920px,96vw);max-width:96vw}
 .mbtn.sm{padding:5px 9px;font-size:13px}
+
+.k .pim{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
