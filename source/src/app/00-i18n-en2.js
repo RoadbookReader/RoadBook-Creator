@@ -263,6 +263,6 @@ Object.assign(I18N_EN, {
   'Pénalité de distance': 'Distance penalty',
   'Compter une pénalité de distance': 'Apply a distance penalty',
   'points pour': 'points per',
-  'La distance à pénaliser est saisie à la main dans le lecteur. En résultat « Temps », les points sont convertis avec la conversion du profil.': 'The distance to penalise is entered by hand in the reader. With a “Time” result, points are converted using the profile conversion.',
+  'Le lecteur compte la distance comme un compteur de temps ; le profil ne donne que le tarif. En résultat « Temps », les points sont convertis avec la conversion du profil.': 'The reader counts the distance like a time counter; the profile only gives the rate. With a “Time” result, points are converted using the profile conversion.',
   'Un type sans ligne renseignée ne donne aucune pénalité.': 'A type with no line filled in gives no penalty.',
 });
