@@ -376,3 +376,6 @@ body.dragNote .leaflet-tooltip{display:none}
 
 #nv{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:6500;display:flex;gap:10px;align-items:center;background:var(--ink);color:#fff;padding:9px 12px 9px 16px;border-radius:10px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:92vw}
 #nv .btn{padding:5px 12px}
+
+#modal.wide{width:min(920px,96vw);max-width:96vw}
+.mbtn.sm{padding:5px 9px;font-size:13px}

@@ -4,7 +4,7 @@
 let modalOpts = null;
 function openModal(title, body, buttons, opts) {
   if (typeof rptClear === 'function') rptClear();
-  const m = $('#modal'); modalOpts = opts || {};
+  const m = $('#modal'); modalOpts = opts || {}; m.classList.remove('wide');
   m.innerHTML = `<h2>${esc(title)}</h2><div class="mb">${body}</div><div class="mf"></div>`;
   const mf = m.querySelector('.mf');
   for (const b of buttons || []) {

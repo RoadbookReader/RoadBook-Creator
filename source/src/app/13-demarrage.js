@@ -604,6 +604,7 @@ $('#moreMenu').addEventListener('click', e => {
   else if (act === 'meas') openMeasure();
   else if (act === 'saveProject') saveProject();
   else if (act === 'prefs') prefsDialog();
+  else if (act === 'reg') regDialog();
   else if (act === 'saveOsm') saveOsm();
   else if (act === 'loadOsm') $('#fileIn').click();
   else if (act === 'theme') cycleTheme();
@@ -647,7 +648,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('#dr
 })();
 
 // accès pour les tests automatisés
-window.__rb = { asOfferProject, trNote, noteView, svgToPNG, tulipSVG, pointAt, inv, tulipEditor, measureForNote, openMeasure, measureAtLL, bendList, bendAt, editNote, altDialog, view3D, cleanEle, timeSeries, timeAt, buildGPX, stagesDialog, stageList, addStage, marksDialog, markForm, pickTrack, parseGPX, cutAt, reverseCtrl, mergeFile, reduceDialog, snapDialog, cleanEnds, rebuildFromSegs, S, map, get T() { return T; }, get G() { return G; }, generate: runGenerate, buildGPX, loadText: (txt, name) => loadFile(new File([txt], name || 'test.gpx')), tulipSVG, openSettings, followRoad, ringCircle, dxy, allIGN, importOsm, noteView, addManualNote, notesSVG, renderAll, renderRadii, noteRadii };
+window.__rb = { regDialog, regXml, regLoad, regAll, asOfferProject, trNote, noteView, svgToPNG, tulipSVG, pointAt, inv, tulipEditor, measureForNote, openMeasure, measureAtLL, bendList, bendAt, editNote, altDialog, view3D, cleanEle, timeSeries, timeAt, buildGPX, stagesDialog, stageList, addStage, marksDialog, markForm, pickTrack, parseGPX, cutAt, reverseCtrl, mergeFile, reduceDialog, snapDialog, cleanEnds, rebuildFromSegs, S, map, get T() { return T; }, get G() { return G; }, generate: runGenerate, buildGPX, loadText: (txt, name) => loadFile(new File([txt], name || 'test.gpx')), tulipSVG, openSettings, followRoad, ringCircle, dxy, allIGN, importOsm, noteView, addManualNote, notesSVG, renderAll, renderRadii, noteRadii };
 I18N.onSet(() => { applyNoteLang(); if (S.notes && S.notes.length) { renderRoadbook(); save(); } });      // la langue des notes suit celle de l'interface
 })();
 

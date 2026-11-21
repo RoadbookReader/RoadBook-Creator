@@ -52,7 +52,7 @@ async function buildGPX(onProg, mode, opts) {
   const o = [];
   o.push('<?xml version="1.0" encoding="UTF-8"?>');
   o.push(`<gpx xmlns="http://www.topografix.com/GPX/1/1" creator="Generateur de Roadbook OSM" version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:openrally="${NS}" xmlns:rbgen="https://roadbookreader.github.io/RoadBook-Creator/ns" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd ${NS} http://www.openrally.org/xmlschemas/GpxExtensions/v1.0.3/openrally.xsd">`);
-  o.push(`  <metadata>\n    <name>${xmlEsc(S.name)}</name>${(S.desc || '').trim() || srcNote() ? `\n    <desc>${xmlEsc([(S.desc || '').trim(), srcNote()].filter(Boolean).join('\n'))}</desc>` : ''}\n    <time>${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</time>\n    <extensions>\n      <openrally:units>metric</openrally:units>\n      <openrally:distance>${km(T.L)}</openrally:distance>${proj ? `\n      <rbgen:project encoding="gzip+base64">${proj}</rbgen:project>` : ''}\n    </extensions>\n  </metadata>`);
+  o.push(`  <metadata>\n    <name>${xmlEsc(S.name)}</name>${(S.desc || '').trim() || srcNote() ? `\n    <desc>${xmlEsc([(S.desc || '').trim(), srcNote()].filter(Boolean).join('\n'))}</desc>` : ''}\n    <time>${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</time>\n    <extensions>\n      <openrally:units>metric</openrally:units>\n      <openrally:distance>${km(T.L)}</openrally:distance>${proj ? `\n      <rbgen:project encoding="gzip+base64">${proj}</rbgen:project>` : ''}${typeof regXml === 'function' ? regXml(opts.reg) : ''}\n    </extensions>\n  </metadata>`);
   let wpCount = 0;
   for (let i = 0; i < S.notes.length; i++) {
     const n = S.notes[i];
@@ -115,13 +115,15 @@ async function exportGPX() {
   if (!T || !S.notes.length) { toast('Génère d’abord le roadbook.', 'err'); return; }
   let pk = 0; try { pk = Math.round((await gzipB64(JSON.stringify(snapshot()))).length / 1024); } catch (e) { }
   const opt = (v, t, d, w, on) => `<label class="xopt${on ? ' on' : ''}"><input type="radio" name="xgpx" value="${v}"${on ? ' checked' : ''}><div><b>${t}</b><div class="xd">${d}</div>${w ? `<div class="xw">${w}</div>` : ''}</div></label>`;
+  const rst = regLoad(), rall = regAll(rst), rlast = (() => { try { return localStorage.getItem('rbgen.regExp') || ''; } catch (_) { return ''; } })();
+  const rsel = `<div class="fld" style="margin-top:10px"><label for="xReg">Règlement particulier inclus</label><select id="xReg"><option value="">Aucun (le lecteur garde ses règles)</option>${rall.map(p => `<option value="${p.id}"${p.id === rlast ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>`;
   const m = openModal('Exporter le GPX', `<div style="font-size:13px;color:#6b6558;margin-bottom:10px">Que veux-tu mettre dans le fichier ?</div>` +
     opt('proj', 'GPX Roadbook + Projet', 'Notes + waypoints + trace + projet. Pour le rouvrir plus tard dans l’éditeur et le modifier. Le lecteur ignore le projet.' + (pk ? ` Ajoute environ ${pk >= 1024 ? (pk / 1024).toFixed(1).replace('.', ',') + ' Mo' : pk + ' Ko'}.` : ''), '', false) +
     opt('full', 'GPX Roadbook complet', 'Notes + waypoints + trace. Pour ton lecteur et pour les pilotes. Fichier léger.', 'Aucune possibilité de reprendre et modifier le roadbook.', true) +
     opt('rb', 'GPX Mode Roadbook', 'Notes + waypoints, sans la trace.', '', false) +
     opt('trace', 'GPX Mode Trace', 'Trace + waypoints, sans les notes du roadbook. Très léger.', '', false) +
-    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false),
-    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full') }], { noEsc: false });
+    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false) + rsel,
+    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => { const rid = (mm.querySelector('#xReg') || {}).value || ''; try { localStorage.setItem('rbgen.regExp', rid); } catch (_) { } runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full', { reg: rall.find(p => p.id === rid) || null }); } }], { noEsc: false });
   m.querySelectorAll('input[name=xgpx]').forEach(r => r.onchange = () => m.querySelectorAll('.xopt').forEach(l => l.classList.toggle('on', l.querySelector('input').checked)));
 }
 async function runExport(mode, opts) {
