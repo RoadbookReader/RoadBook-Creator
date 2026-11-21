@@ -249,6 +249,8 @@ Object.assign(I18N_EN, {
   'Aucune': 'None',
   'Temps': 'Time',
   'Points': 'Points',
+  'Avance → temps': 'Early → time',
+  'Avance → points': 'Early → points',
   'Retard → temps': 'Late → time',
   'Avance + retard → temps': 'Early + late → time',
   'Retard → points': 'Late → points',

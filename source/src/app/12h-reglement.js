@@ -2,7 +2,7 @@
 const REG_KEY = 'rbgen.reg';
 const REG_FIM = { id: 'fim', name: 'FIM', builtin: true, desc: 'Règlement FIM 2026 appliqué par le lecteur : départ anticipé, CH (1 min par minute), CP manqué 15 min, temps maximum de spéciale…', res: 'time', k: 2, sp: { m: 'time', k: 1 }, rows: {} };
 const REG_TIMED = ['ch', 'dss', 'ass', 'dt', 'ft', 'dn', 'fn'];      // seuls ces types ont une heure : avance / retard possible
-const REG_AR = [['none', 'Aucune'], ['late-time', 'Retard → temps'], ['both-time', 'Avance + retard → temps'], ['late-pts', 'Retard → points'], ['both-pts', 'Avance + retard → points']];
+const REG_AR = [['none', 'Aucune'], ['early-time', 'Avance → temps'], ['late-time', 'Retard → temps'], ['both-time', 'Avance + retard → temps'], ['early-pts', 'Avance → points'], ['late-pts', 'Retard → points'], ['both-pts', 'Avance + retard → points']];
 function regNum(v, d) { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) && x >= 0 ? x : (d || 0); }
 function regLoad() {
   let o = null; try { o = JSON.parse(localStorage.getItem(REG_KEY) || 'null'); } catch (_) { }
