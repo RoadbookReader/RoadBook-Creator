@@ -1057,7 +1057,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1210</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1239</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1101,7 +1101,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261121.1210 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261121.1239 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -2997,6 +2997,8 @@ Object.assign(I18N_EN, {
   'Non compté': 'Not counted',
   'Du temps': 'As time',
   'Des points': 'As points',
+  'Du temps (barème FIM classique)': 'As time (classic FIM scale)',
+  'Des points (barème FIM converti)': 'As points (converted FIM scale)',
   'Un type sans ligne renseignée ne donne aucune pénalité.': 'A type with no line filled in gives no penalty.',
 });
 // Langue de l'interface : français (par défaut) ou anglais. Traduction au vol du texte affiché (DOM) à partir du dictionnaire I18N_EN.
@@ -8100,14 +8102,14 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) nvCh
 setInterval(nvCheck, 30 * 60 * 1000);
 /* ---------- Règlements particuliers : profils de pénalités par type de WP, écrits dans le GPX (<rbgen:rules>) ---------- */
 const REG_KEY = 'rbgen.reg';
-const REG_FIM = { id: 'fim', name: 'FIM', builtin: true, desc: 'Règlement FIM 2026 appliqué par le lecteur : départ anticipé, CH (1 min par minute), CP manqué 15 min, temps maximum de spéciale…', res: 'time', k: 2, sp: { m: 'time', k: 1 }, rows: {} };
+const REG_FIM = { id: 'fim', name: 'FIM', builtin: true, desc: 'Règlement FIM 2026 appliqué par le lecteur : départ anticipé, CH (1 min par minute), CP manqué 15 min, temps maximum de spéciale…', res: 'time', k: 2, sp: { m: 'time', k: 1 }, spd: 'time', rows: {} };
 const REG_TIMED = ['ch', 'dss', 'ass', 'dt', 'ft', 'dn', 'fn'];      // seuls ces types ont une heure : avance / retard possible
 const REG_AR = [['none', 'Aucune'], ['early-time', 'Avance → temps'], ['late-time', 'Retard → temps'], ['both-time', 'Avance + retard → temps'], ['early-pts', 'Avance → points'], ['late-pts', 'Retard → points'], ['both-pts', 'Avance + retard → points']];
 function regNum(v, d) { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) && x >= 0 ? x : (d || 0); }
 function regLoad() {
   let o = null; try { o = JSON.parse(localStorage.getItem(REG_KEY) || 'null'); } catch (_) { }
   if (!o || !Array.isArray(o.list)) {
-    const nav = { id: 'nav', name: 'Navigation', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, rows: {} };
+    const nav = { id: 'nav', name: 'Navigation', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, spd: 'none', rows: {} };
     o = { list: [nav], sel: 'nav' };
   }
   return o;
@@ -8126,6 +8128,7 @@ function regXml(p) {                                             // bloc GPX ; p
   const o = [`\n      <rbgen:rules name="${q(p.name)}" result="${p.res === 'time' ? 'time' : 'points'}" ptsPerMin="${regNum(p.k, 1)}">`];
   if ((p.desc || '').trim()) o.push(`        <rbgen:desc>${q(p.desc.trim())}</rbgen:desc>`);
   if (p.sp && p.sp.m !== 'none') o.push(`        <rbgen:special mode="${p.sp.m === 'pts' ? 'points' : 'time'}" ptsPerMin="${regNum(p.sp.k, 1)}"/>`);
+  if (p.spd && p.spd !== 'none') o.push(`        <rbgen:speed mode="${p.spd === 'pts' ? 'points' : 'time'}"/>`);
   for (const [t] of WP_TYPES) {
     if (!t) continue;
     const r = p.rows[t]; const tm = REG_TIMED.includes(t), ar = tm && r ? r.ar : 'none';
@@ -8155,6 +8158,7 @@ function regDialog() {
 <div class="fld"><label>Description (visible par les pilotes)</label><textarea data-k="desc">${esc(p.desc || '')}</textarea></div>
 <div class="rgtw" style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
 <div class="rgsp"><b>Temps de spéciale</b> (chrono DSS → ASS)<br>Compté comme ${sel('spm', p.sp.m, [['none', 'Non compté'], ['time', 'Du temps'], ['pts', 'Des points']])}${p.sp.m === 'pts' ? ` &nbsp;1 min de spéciale = <input data-k="spk" size="3" value="${p.sp.k}"> pt` : ''}</div>
+<div class="rgsp"><b>Excès de vitesse</b> (toutes les limites, par impulsion)<br>Compté comme ${sel('spd', p.spd || 'none', [['none', 'Non compté'], ['time', 'Du temps (barème FIM classique)'], ['pts', 'Des points (barème FIM converti)']])}<div style="color:#6b6558;font-size:12px;margin-top:3px">Barème FIM par impulsion : 1 à 5 km/h = 10 s ; 6 à 15 = 1 min ; 16 à 40 = 2 min ; plus de 40 = 6 min. En points, avec la conversion du profil (1 min = ${p.k} pts).</div></div>
 <div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
     }
     return `<div style="display:flex;gap:12px;flex-wrap:wrap"><div style="width:190px;flex:none"><div class="rgl">${list}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="mbtn sm" data-a="new">＋ Nouveau</button><button class="mbtn sm" data-a="dup">Dupliquer</button>${ro ? '' : '<button class="mbtn danger sm" data-a="del">Supprimer</button>'}</div></div><div style="flex:1;min-width:260px">${ed}</div></div>
@@ -8174,7 +8178,7 @@ function regDialog() {
     const it = e.target.closest('.rgit'); if (it) { cur = it.dataset.id; commit(); draw(); return; }
     const a = e.target.closest('[data-a]'); if (!a) return;
     const p = cp();
-    if (a.dataset.a === 'new') { const n = { id: newId(), name: 'Nouveau règlement', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, rows: {} }; st.list.push(n); cur = n.id; }
+    if (a.dataset.a === 'new') { const n = { id: newId(), name: 'Nouveau règlement', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, spd: 'none', rows: {} }; st.list.push(n); cur = n.id; }
     else if (a.dataset.a === 'dup') { const n = JSON.parse(JSON.stringify(p.builtin ? { ...p, builtin: false, rows: regFromFim() } : p)); n.id = newId(); n.name = (p.name + ' (copie)').slice(0, 60); delete n.builtin; st.list.push(n); cur = n.id; }
     else if (a.dataset.a === 'del') { if (!confirm('Supprimer ce profil ?')) return; st.list = st.list.filter(x => x.id !== p.id); cur = st.list.length ? st.list[0].id : 'fim'; }
     commit(); draw();
@@ -8189,8 +8193,9 @@ function regDialog() {
     else if (k === 'res') p.res = el.value;
     else if (k === 'k') p.k = regNum(el.value, 1) || 1;
     else if (k === 'spm') p.sp.m = el.value;
+    else if (k === 'spd') p.spd = el.value;
     else if (k === 'spk') p.sp.k = regNum(el.value, 1);
-    commit(); if (tr || k === 'name' || k === 'spm') draw();
+    commit(); if (tr || k === 'name' || k === 'spm' || k === 'k') draw();
   });
   draw();
 }

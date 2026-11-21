@@ -258,5 +258,7 @@ Object.assign(I18N_EN, {
   'Non compté': 'Not counted',
   'Du temps': 'As time',
   'Des points': 'As points',
+  'Du temps (barème FIM classique)': 'As time (classic FIM scale)',
+  'Des points (barème FIM converti)': 'As points (converted FIM scale)',
   'Un type sans ligne renseignée ne donne aucune pénalité.': 'A type with no line filled in gives no penalty.',
 });
