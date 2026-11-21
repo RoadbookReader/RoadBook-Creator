@@ -1,4 +1,4 @@
-// Symboles du lexique road book cross-country FIA 2025 (annexe III, pages 107 à 109 ; icônes fournies par rallynavigator.com selon le document)
+// Symboles du lexique road book cross-country FIA 2025 (annexe III, pages 107 à 109)
 // Découpés dans le PDF fourni par l’utilisateur. l = libellé français, en = libellé officiel. Fond extérieur transparent. -V, E3 et QT en noir (version « case description »).
 // Les groupes d’icônes du lexique sont séparés en symboles indépendants (clé_1, clé_2…) ; l’ancien groupe (x: 1) reste, caché de la liste, pour les notes déjà faites.
 const FIA_CATS = ["Pistes", "Sur la piste", "Caps", "Sécurité", "Dunes / sable", "Symboles", "Contrôles", "Abréviations"];
