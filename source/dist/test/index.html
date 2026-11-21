@@ -1054,7 +1054,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1046</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261121.1048</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1097,7 +1097,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261121.1046 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261121.1048 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -6810,7 +6810,8 @@ function editNote(id, isNew) {
       <div class="fld" id="eDurF"><label for="eDur">Durée de neutralisation (min)</label><input id="eDur" type="number" min="0" value="${wp.dur || ''}"></div>
       <div class="fld" id="eWpSpF"><label for="eWpSp">Vitesse maxi (km/h, facultatif)</label><input id="eWpSp" type="number" min="1" value="${wp.speed || ''}"></div>
     </div>
-    <div class="fld" id="eWdescF"><label for="eWdesc">${gpsOffT('Description du waypoint (fenêtre à lire à l’arrêt, quand il est validé dans le lecteur)', 'Waypoint description (window to read when stopped, shown when the waypoint is validated in the reader)')}</label><textarea id="eWdesc" rows="7" placeholder="${gpsOffT('Texte libre, sans limite : consigne, énigme, indice…', 'Free text, no limit: instruction, riddle, clue…')}">${esc(wp.desc || '')}</textarea></div>
+    <div id="eWdescF"><label class="chk"><input type="checkbox" id="eWdescOn"${wp.desc && !wp.descOff ? ' checked' : ''}> ${gpsOffT('Afficher une description quand ce waypoint est validé (dans le lecteur)', 'Show a description when this waypoint is validated (in the reader)')}</label>
+      <div class="fld" id="eWdescT"><textarea id="eWdesc" rows="7" placeholder="${gpsOffT('Texte libre, sans limite : consigne, énigme, indice… À lire à l’arrêt.', 'Free text, no limit: instruction, riddle, clue… To read when stopped.')}">${esc(wp.desc || '')}</textarea></div></div>
     <div class="help">Rayons du tableau FIM proposés par défaut (ouverture vide = WP toujours visible ou jamais ouvert), modifiables selon le règlement de ton épreuve.</div>
     </div>
     <div class="enp" data-p="3">
@@ -6832,7 +6833,7 @@ function editNote(id, isNew) {
       if (!t) n.wp = null;
       else {
         n.wp = { type: t, name: $('#eName').value.trim() };
-        const wd = $('#eWdesc').value.replace(/\s+$/, ''); if (wd.trim()) n.wp.desc = wd;
+        const wd = $('#eWdesc').value.replace(/\s+$/, ''); if (wd.trim()) { n.wp.desc = wd; if (!$('#eWdescOn').checked) n.wp.descOff = true; }      // texte gardé même si la case est décochée
         if (isRadiusWP(t)) { const o = parseInt($('#eOpen').value, 10), c = parseInt($('#eClear').value, 10); if (o > 0) n.wp.open = o; if (c > 0) n.wp.clear = c; }
         if (t === 'dn') { const d = parseInt($('#eDur').value, 10); if (d >= 0) n.wp.dur = d; }
         if (/^(dss|dt|ch)$/.test(t)) { const v = parseInt($('#eLim').value, 10); if (v > 0) n.wp.limit = v; }
@@ -6869,6 +6870,7 @@ function editNote(id, isNew) {
     const t = $('#eWp').value;
     $('#eWpRad').style.display = t ? '' : 'none';      // le nom se saisit pour tous les types de waypoint
     $('#eWdescF').style.display = t ? '' : 'none';
+    $('#eWdescT').style.display = $('#eWdescOn').checked ? '' : 'none';
     $('#eOpen').parentElement.style.display = $('#eClear').parentElement.style.display = isRadiusWP(t) ? '' : 'none';
     $('#eDurF').style.display = t === 'dn' ? '' : 'none';
     $('#eWpSpF').style.display = /^(dn|dt|dss|ch)$/.test(t) ? '' : 'none';
@@ -6998,6 +7000,7 @@ function editNote(id, isNew) {
   $('#eLexSel').onclick = e => { const b = e.target.closest('button[data-k]'); if (!b) return; lexSel.splice(lexSel.indexOf(b.dataset.k), 1); renderLex(); renderStage(); };
   renderLex(); renderStage();
   $('#eZone').addEventListener('change', () => upd());
+  $('#eWdescOn').addEventListener('change', () => { upd(); if ($('#eWdescOn').checked) $('#eWdesc').focus(); });
   $('#eWp').addEventListener('change', () => { const t = $('#eWp').value; if (isRadiusWP(t)) { $('#eOpen').value = WP_DEF[t][0] || ''; $('#eClear').value = WP_DEF[t][1] || ''; } upd(); });
   upd();
   setTimeout(() => { const ta = m.querySelector('#eText'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 30);
@@ -7300,7 +7303,7 @@ async function buildGPX(onProg, mode, opts) {
       if (z === 'dz' || z === 'fzdz') { ex.push(`<openrally:dz${attrs(o, c)}/>`); if (n.zone.speed) speed = n.zone.speed; }
     }
     if (speed) ex.push(`<openrally:speed>${speed}</openrally:speed>`);
-    if (opts.desc !== false && n.wp && n.wp.desc && n.wp.desc.trim()) ex.push(`<rbgen:wpdesc><![CDATA[${n.wp.desc.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]></rbgen:wpdesc>`);      // texte à lire dans le lecteur quand le waypoint est validé
+    if (n.wp && n.wp.desc && n.wp.desc.trim() && !n.wp.descOff) ex.push(`<rbgen:wpdesc><![CDATA[${n.wp.desc.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]></rbgen:wpdesc>`);      // texte à lire dans le lecteur quand le waypoint est validé
     if (n.fuel) ex.push('<openrally:fuel/>');
     o.push(`  <wpt lat="${n.lat.toFixed(6)}" lon="${n.lon.toFixed(6)}">\n    <name>${i + 1}</name>\n    <desc>${xmlEsc((n.text || '').replace(/\n/g, ' / '))}</desc>\n    <extensions>\n      ${ex.join('\n      ')}\n    </extensions>\n  </wpt>`);
   }
@@ -7326,16 +7329,14 @@ async function buildGPX(onProg, mode, opts) {
 async function exportGPX() {
   if (!T || !S.notes.length) { toast('Génère d’abord le roadbook.', 'err'); return; }
   let pk = 0; try { pk = Math.round((await gzipB64(JSON.stringify(snapshot()))).length / 1024); } catch (e) { }
-  const nDesc = S.notes.filter(n => n.wp && n.wp.desc && n.wp.desc.trim()).length;
   const opt = (v, t, d, w, on) => `<label class="xopt${on ? ' on' : ''}"><input type="radio" name="xgpx" value="${v}"${on ? ' checked' : ''}><div><b>${t}</b><div class="xd">${d}</div>${w ? `<div class="xw">${w}</div>` : ''}</div></label>`;
   const m = openModal('Exporter le GPX', `<div style="font-size:13px;color:#6b6558;margin-bottom:10px">Que veux-tu mettre dans le fichier ?</div>` +
     opt('proj', 'GPX Roadbook + Projet', 'Notes + waypoints + trace + projet. Pour le rouvrir plus tard dans l’éditeur et le modifier. Le lecteur ignore le projet.' + (pk ? ` Ajoute environ ${pk >= 1024 ? (pk / 1024).toFixed(1).replace('.', ',') + ' Mo' : pk + ' Ko'}.` : ''), '', false) +
     opt('full', 'GPX Roadbook complet', 'Notes + waypoints + trace. Pour ton lecteur et pour les pilotes. Fichier léger.', 'Aucune possibilité de reprendre et modifier le roadbook.', true) +
     opt('rb', 'GPX Mode Roadbook', 'Notes + waypoints, sans la trace.', '', false) +
     opt('trace', 'GPX Mode Trace', 'Trace + waypoints, sans les notes du roadbook. Très léger.', '', false) +
-    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false) +
-    (nDesc ? `<label class="xopt on" style="margin-top:8px"><input type="checkbox" id="xdesc" checked><div><b>${gpsOffT('Inclure les descriptions de waypoint', 'Include waypoint descriptions')} (${nDesc})</b><div class="xd">${gpsOffT('Le lecteur les affiche dans une fenêtre quand le waypoint est validé. Décoche pour un GPX sans ces textes (le projet les garde).', 'The reader shows them in a window when the waypoint is validated. Untick for a GPX without these texts (the project keeps them).')}</div><div class="xw">${gpsOffT('Le texte est lisible en clair dans le fichier GPX.', 'The text is readable in plain form in the GPX file.')}</div></div></label>` : ''),
-    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full', { desc: !mm.querySelector('#xdesc') || mm.querySelector('#xdesc').checked }) }], { noEsc: false });
+    opt('orient', 'GPX Mode Orientation', 'Waypoints seulement.', '', false),
+    [{ label: 'Annuler' }, { label: 'Exporter', cls: 'primary', onClick: mm => runExport((mm.querySelector('input[name=xgpx]:checked') || {}).value || 'full') }], { noEsc: false });
   m.querySelectorAll('input[name=xgpx]').forEach(r => r.onchange = () => m.querySelectorAll('.xopt').forEach(l => l.classList.toggle('on', l.querySelector('input').checked)));
 }
 async function runExport(mode, opts) {

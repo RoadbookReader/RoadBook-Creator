@@ -753,7 +753,8 @@ function editNote(id, isNew) {
       <div class="fld" id="eDurF"><label for="eDur">Durée de neutralisation (min)</label><input id="eDur" type="number" min="0" value="${wp.dur || ''}"></div>
       <div class="fld" id="eWpSpF"><label for="eWpSp">Vitesse maxi (km/h, facultatif)</label><input id="eWpSp" type="number" min="1" value="${wp.speed || ''}"></div>
     </div>
-    <div class="fld" id="eWdescF"><label for="eWdesc">${gpsOffT('Description du waypoint (fenêtre à lire à l’arrêt, quand il est validé dans le lecteur)', 'Waypoint description (window to read when stopped, shown when the waypoint is validated in the reader)')}</label><textarea id="eWdesc" rows="7" placeholder="${gpsOffT('Texte libre, sans limite : consigne, énigme, indice…', 'Free text, no limit: instruction, riddle, clue…')}">${esc(wp.desc || '')}</textarea></div>
+    <div id="eWdescF"><label class="chk"><input type="checkbox" id="eWdescOn"${wp.desc && !wp.descOff ? ' checked' : ''}> ${gpsOffT('Afficher une description quand ce waypoint est validé (dans le lecteur)', 'Show a description when this waypoint is validated (in the reader)')}</label>
+      <div class="fld" id="eWdescT"><textarea id="eWdesc" rows="7" placeholder="${gpsOffT('Texte libre, sans limite : consigne, énigme, indice… À lire à l’arrêt.', 'Free text, no limit: instruction, riddle, clue… To read when stopped.')}">${esc(wp.desc || '')}</textarea></div></div>
     <div class="help">Rayons du tableau FIM proposés par défaut (ouverture vide = WP toujours visible ou jamais ouvert), modifiables selon le règlement de ton épreuve.</div>
     </div>
     <div class="enp" data-p="3">
@@ -775,7 +776,7 @@ function editNote(id, isNew) {
       if (!t) n.wp = null;
       else {
         n.wp = { type: t, name: $('#eName').value.trim() };
-        const wd = $('#eWdesc').value.replace(/\s+$/, ''); if (wd.trim()) n.wp.desc = wd;
+        const wd = $('#eWdesc').value.replace(/\s+$/, ''); if (wd.trim()) { n.wp.desc = wd; if (!$('#eWdescOn').checked) n.wp.descOff = true; }      // texte gardé même si la case est décochée
         if (isRadiusWP(t)) { const o = parseInt($('#eOpen').value, 10), c = parseInt($('#eClear').value, 10); if (o > 0) n.wp.open = o; if (c > 0) n.wp.clear = c; }
         if (t === 'dn') { const d = parseInt($('#eDur').value, 10); if (d >= 0) n.wp.dur = d; }
         if (/^(dss|dt|ch)$/.test(t)) { const v = parseInt($('#eLim').value, 10); if (v > 0) n.wp.limit = v; }
@@ -812,6 +813,7 @@ function editNote(id, isNew) {
     const t = $('#eWp').value;
     $('#eWpRad').style.display = t ? '' : 'none';      // le nom se saisit pour tous les types de waypoint
     $('#eWdescF').style.display = t ? '' : 'none';
+    $('#eWdescT').style.display = $('#eWdescOn').checked ? '' : 'none';
     $('#eOpen').parentElement.style.display = $('#eClear').parentElement.style.display = isRadiusWP(t) ? '' : 'none';
     $('#eDurF').style.display = t === 'dn' ? '' : 'none';
     $('#eWpSpF').style.display = /^(dn|dt|dss|ch)$/.test(t) ? '' : 'none';
@@ -941,6 +943,7 @@ function editNote(id, isNew) {
   $('#eLexSel').onclick = e => { const b = e.target.closest('button[data-k]'); if (!b) return; lexSel.splice(lexSel.indexOf(b.dataset.k), 1); renderLex(); renderStage(); };
   renderLex(); renderStage();
   $('#eZone').addEventListener('change', () => upd());
+  $('#eWdescOn').addEventListener('change', () => { upd(); if ($('#eWdescOn').checked) $('#eWdesc').focus(); });
   $('#eWp').addEventListener('change', () => { const t = $('#eWp').value; if (isRadiusWP(t)) { $('#eOpen').value = WP_DEF[t][0] || ''; $('#eClear').value = WP_DEF[t][1] || ''; } upd(); });
   upd();
   setTimeout(() => { const ta = m.querySelector('#eText'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 30);
