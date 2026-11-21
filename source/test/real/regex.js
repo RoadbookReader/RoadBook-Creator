@@ -1,0 +1,14 @@
+const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
+(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1000, height: 900 }, locale: 'fr-FR' })).newPage();
+  await p.route(/^(?!file).*/, r => r.abort()); await p.goto('file://' + path.join(__dirname, '..', '..', 'dist', 'generateur-roadbook.html')); await p.evaluate(() => localStorage.clear()); await p.reload();
+  await p.evaluate(t => window.__rb.loadText(t, 'a.gpx'), fs.readFileSync(path.join(__dirname, 'andorra.gpx'), 'utf8')); await p.waitForTimeout(600);
+  await p.evaluate(() => { const R = window.__rb, mk = (i, s, wp) => ({ id: 'n' + i, s, lat: R.S.ll[i * 10][0], lon: R.S.ll[i * 10][1], text: 't', kind: 'info', wp, tulip: null }); R.S.notes = [mk(1, 500, { type: 'dss', name: 'Départ spéciale 1' }), mk(2, 900, { type: 'cp', name: 'Poste 1' }), mk(3, 1400, { type: 'ch', name: 'CH 1' })]; });
+  await p.evaluate(() => window.__rb.regDialog()); await p.waitForTimeout(300);
+  const row = t => `tr[data-t="${t}"]`;
+  await p.fill('textarea[data-k=desc]', 'Épreuve d’orientation : chaque WP manqué coûte des points.');
+  await p.selectOption(row('dss') + ' select[data-k=mu]', 'pts'); await p.fill(row('dss') + ' input[data-k=mv]', '20'); await p.selectOption(row('dss') + ' select[data-k=ar]', 'late-pts'); await p.fill(row('dss') + ' input[data-k=tol]', '1'); await p.press(row('dss') + ' input[data-k=tol]', 'Tab');
+  await p.selectOption(row('ch') + ' select[data-k=ar]', 'both-pts'); await p.selectOption(row('cp') + ' select[data-k=mu]', 'time'); await p.fill(row('cp') + ' input[data-k=mv]', '15'); await p.press(row('cp') + ' input[data-k=mv]', 'Tab');
+  await p.selectOption('select[data-k=spm]', 'pts'); await p.selectOption('select[data-k=spd]', 'pts'); await p.check('input[data-k=dson]'); await p.fill('input[data-k=dx]', '3'); await p.fill('input[data-k=dy]', '2500'); await p.press('input[data-k=dy]', 'Tab');
+  await p.keyboard.press('Escape');
+  const gpx = await p.evaluate(async () => { const R = window.__rb; return await R.buildGPX(null, 'rb', { reg: R.regAll(R.regLoad()).find(x => x.id === 'nav') }); });
+  fs.writeFileSync('/tmp/exemple-reglement-particulier.gpx', gpx); console.log(gpx.length); await b.close(); })();
