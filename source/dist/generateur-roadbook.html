@@ -1059,7 +1059,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261122.1733</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261122.1822</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1103,7 +1103,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261122.1733</div>
+          <div class="ver">Version v0.261122.1822</div>
         </div>
       </div>
     </div>
@@ -8224,7 +8224,7 @@ function regXml(p) {                                             // bloc GPX ; p
   const o = [`\n      <rbgen:rules name="${q(p.name)}" result="${p.res === 'time' ? 'time' : 'points'}" ptsPerMin="${regNum(p.k, 1)}">`];
   if ((p.desc || '').trim()) o.push(`        <rbgen:desc>${q(p.desc.trim())}</rbgen:desc>`);
   if (p.sp && p.sp.m !== 'none') o.push(`        <rbgen:special mode="${p.sp.m === 'pts' ? 'points' : 'time'}" ptsPerMin="${regNum(p.sp.k, 1)}"/>`);
-  if (p.spd && p.spd !== 'none') o.push(`        <rbgen:speed mode="${p.spd === 'pts' ? 'points' : 'time'}"/>`);
+  if (p.spd && p.spd !== 'none') o.push(`        <rbgen:speed mode="${p.spd === 'pts' ? 'points' : 'time'}"${p.spd === 'pts' ? ` ptsPerMin="${regNum(p.spdk != null ? p.spdk : p.k, 1)}"` : ''}/>`);
   if (p.dist && p.dist.on && regNum(p.dist.x) > 0 && regNum(p.dist.y) > 0) o.push(`        <rbgen:distance points="${regNum(p.dist.x)}" per="${regNum(p.dist.y)}" unit="m" scope="${p.dist.scope === 'special' ? 'special' : 'all'}"/>`);
   for (const [t] of WP_TYPES) {
     if (!t) continue;
@@ -8255,7 +8255,7 @@ function regDialog() {
 <div class="fld"><label>Description (visible par les pilotes)</label><textarea data-k="desc">${esc(p.desc || '')}</textarea></div>
 <div class="rgtw" style="max-height:34vh;overflow:auto"><table class="rgt"><tr><th>Type de WP</th><th>WP manqué</th><th>Valeur</th><th>Avance / retard</th><th>Tolérance</th></tr>${rows}</table></div>
 <div class="rgsp"><b>Temps de spéciale</b> (chrono DSS → ASS)<br>Compté comme ${sel('spm', p.sp.m, [['none', 'Non compté'], ['time', 'Du temps'], ['pts', 'Des points']])}${p.sp.m === 'pts' ? ` &nbsp;1 min de spéciale = <input data-k="spk" size="3" value="${p.sp.k}"> pt` : ''}</div>
-<div class="rgsp"><b>Excès de vitesse</b> (toutes les limites, par impulsion)<br>Compté comme ${sel('spd', p.spd || 'none', [['none', 'Non compté'], ['time', 'Du temps (barème FIM classique)'], ['pts', 'Des points (barème FIM converti)']])}<div style="color:#6b6558;font-size:12px;margin-top:3px">Barème FIM par impulsion : 1 à 5 km/h = 10 s ; 6 à 15 = 1 min ; 16 à 40 = 2 min ; plus de 40 = 6 min. En points, avec la conversion du profil.</div></div>
+<div class="rgsp"><b>Excès de vitesse</b> (toutes les limites, par impulsion)<br>Compté comme ${sel('spd', p.spd || 'none', [['none', 'Non compté'], ['time', 'Du temps (barème FIM classique)'], ['pts', 'Des points (barème FIM converti)']])}${p.spd === 'pts' ? ` &nbsp;1 min de pénalité = <input data-k="spdk" size="3" value="${p.spdk != null ? p.spdk : p.k}"> pt` : ''}<div style="color:#6b6558;font-size:12px;margin-top:3px">Barème FIM par impulsion : 1 à 5 km/h = 10 s ; 6 à 15 = 1 min ; 16 à 40 = 2 min ; plus de 40 = 6 min. En points : 1 min = le nombre de points réglé ci-dessus.</div></div>
 <div class="rgsp"><b>Pénalité de distance</b><br><label><input type="checkbox" data-k="dson"${p.dist && p.dist.on ? ' checked' : ''}> Compter une pénalité de distance</label>${p.dist && p.dist.on ? `<div style="margin-top:4px"><input data-k="dx" size="4" value="${p.dist.x}"> points pour <input data-k="dy" size="5" value="${p.dist.y}"> m</div><div style="margin-top:4px">Distance comptée : <select data-k="dsc"><option value="all"${p.dist.scope !== 'special' ? ' selected' : ''}>Tout le roadbook</option><option value="special"${p.dist.scope === 'special' ? ' selected' : ''}>Seulement les spéciales (DSS → ASS)</option></select></div><div style="color:#6b6558;font-size:12px;margin-top:3px">Par tranche entamée : "X" points chaque fois que "Y" mètres sont commencés. En résultat « Temps », les points sont convertis avec la conversion du profil.</div>` : ''}</div>
 <div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
     }
@@ -8297,7 +8297,8 @@ function regDialog() {
     else if (k === 'dx') p.dist = Object.assign(p.dist || { on: true, y: 1000 }, { x: regNum(el.value, 1) });
     else if (k === 'dy') p.dist = Object.assign(p.dist || { on: true, x: 1 }, { y: regNum(el.value, 1000) });
     else if (k === 'spk') p.sp.k = regNum(el.value, 1);
-    commit(); if (tr || k === 'name' || k === 'spm' || k === 'k' || k === 'dson') draw();
+    else if (k === 'spdk') p.spdk = regNum(el.value, 1);
+    commit(); if (tr || k === 'name' || k === 'spm' || k === 'spd' || k === 'k' || k === 'dson') draw();
   });
   draw();
 }
