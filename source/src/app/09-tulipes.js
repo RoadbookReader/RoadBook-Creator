@@ -609,7 +609,8 @@ function rowInner(n, i, par, f, screen) {
   const big = /^(dss|ass)$/.test(t || '') ? `<div class="wpbig">${t.toUpperCase()}</div>` : '';      // DSS / ASS : le sigle en grand au milieu de la 3e case (le symbole de la 1re case n'a plus le mot)
   const tl = /^(dss|dt|ch)$/.test(t || '') && n.wp.limit > 0 ? `<div class="tl">T:${n.wp.limit}</div>` : '';      // temps limite : texte rouge en haut de la 3e case
   const top = dg || tl ? `<div class="k3top">${dg}${tl}</div>` : '';
-  const cap = n.showCap && n.cap != null ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
+  const capT = S.settings.capInTulip !== false && n.showCap && n.cap != null && !n.imgT;      // CAP actif : pastille jaune dans la tulipe (comme dans le GPX exporté)
+  const cap = n.showCap && n.cap != null && !capT ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
   const capOff = screen && !n.showCap && n.cap != null ? `<div class="cap off" title="Clic : afficher le CAP · double clic : mesurer">${Math.round(n.cap) % 360}°</div>` : '';      // CAP inactif (gris) : seulement à l'écran
   // symboles du lexique : on les réduit si besoin pour qu'ils tiennent entre la direction et l'encadré du CAP
   const lk = NV.keys, avail = 33.3 - 1.4 - (signs.length ? 12.4 : cap ? 6.6 : 1.4) - (dg || tl ? 5.7 : 0) - (lines[0] ? 5.6 * (lines[0].length > 13 ? 2 : 1) : 0) - 0.7;
@@ -619,7 +620,7 @@ function rowInner(n, i, par, f, screen) {
   while (lk.length && lh > 3.5 && lr * (lh + 0.6) + need > avail) { lh -= 0.5; lr = lexRows(lk, lh, 29.6, 0.6); }
   const lx = lk.length ? `<div class="lx" style="--lh:${lh}cqw">${lk.map(k => `<img src="${FIA_LEX[k].d}" alt="${esc(lexName(k))}" title="${esc(lexTitle(k))}">`).join('')}</div>` : '';
   return `<div class="k k1" style="background:${bg}"><div class="tot">${kmFr(n.s)}</div><div class="bl"><div class="par">${kmFr(par)}</div>${f.close ? ARROW_SVG : ''}</div>${sym}<div class="br"><div class="num">${i + 1}</div></div></div>`
-    + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
+    + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200, undefined, capT ? n.cap : null) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
     + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${n.imgN ? `${big}${top}<img class="pim" src="${n.imgN}" alt="">` : `${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>`}${cap}${capOff}${sg}`
     + (screen && (!n.auto || n.moved) ? '<div class="man">manuelle</div>' : '')
     + (screen ? `<div class="acts">${whyOf(n) ? '<button data-a="why" title="Pourquoi cette note ?">?</button>' : ''}<button data-a="edit" title="Modifier la note">✎</button><button data-a="del" title="Supprimer la note">🗑</button></div>` : '') + `</div>`
@@ -684,7 +685,7 @@ async function redrawTulip(n, R) {
     for (let ty = Math.floor(sw[0] / TS); ty <= Math.floor(ne[0] / TS); ty++) for (let tx = Math.floor(sw[1] / TS); tx <= Math.floor(ne[1] / TS); tx++) extraTiles.add(tx + ',' + ty);
   }
   if (!G || G.key !== graphKey()) await fetchOSM(() => {}, () => false);
-  const oldR = S.settings.tulipR; S.settings.tulipR = R;
+  const oldR = S.settings.tulipR; S.settings.tulipR = R; rbAutoR = false;      // rayon choisi à la main : pas de rayon automatique pour les ronds-points
   try {
     let src = n.src, t = null;
     if (!src && n.kind === 'junction') {         // note d'une ancienne version : on retrouve le carrefour le plus proche
@@ -704,7 +705,7 @@ async function redrawTulip(n, R) {
       t = trackTulip(sGeo, kind).tulip;
     }
     n.tulip = t;
-  } finally { S.settings.tulipR = oldR; }
+  } finally { S.settings.tulipR = oldR; rbAutoR = true; }
 }
 // symboles importés par l'utilisateur : catégorie « Mes symboles », mémorisés dans le navigateur (bibliothèque) ET dans le fichier projet
 const MYS = {};

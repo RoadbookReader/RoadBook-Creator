@@ -505,7 +505,7 @@ const I18N_EN = {
 "Inclure les voies piétonnes et cyclables (footway, cycleway, escaliers)": "Include pedestrian and cycle ways (footway, cycleway, stairs)",
 "Regrouper les notes à moins de (m)": "Merge notes closer than (m)",
 "Ajouter un WPM automatiquement sur les notes qui suivent un passage hors piste": "Automatically add a WPM on notes that follow an off-piste section",
-"Écrire aussi le CAP dans la tulipe exportée (pastille jaune)": "Also write the HEADING in the exported tulip (yellow badge)",
+"Écrire aussi le CAP dans la tulipe (pastille jaune, à l’écran et à l’export)": "Also write the HEADING in the tulip (yellow badge, on screen and in the export)",
 "Noter aussi les intersections où l’on continue tout droit": "Also note junctions where you go straight on",
 "Noter les fourches (Y) dont une branche est d’un autre type (route + chemin)": "Note forks (Y) where one branch is of another type (road + path)",
 "Noter les T et croisements dont les autres branches sont d’un autre type (route + chemin)": "Note T-junctions and crossings whose other branches are of another type (road + path)",

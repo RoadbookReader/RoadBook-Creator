@@ -1059,7 +1059,7 @@ body.dragNote .leaflet-tooltip{display:none}
   <header>
     <div class="brand">
       <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="7" fill="#e39b2d"/><circle cx="20" cy="31" r="3.4" fill="#1b1a17"/><path d="M20 31 V18 L29 11" stroke="#1b1a17" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M24.6 8.2 L32.6 8.2 L30.4 15.6 Z" fill="#1b1a17"/><path d="M20 18 L10 12" stroke="#1b1a17" stroke-width="2" fill="none"/></svg>
-      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261122.1706</small></div>
+      <div>Roadbook<small>Générateur automatique · OSM</small><small class="vtag">v0.261122.1724</small></div>
     </div>
     <input id="rbName" type="text" value="Mon roadbook" title="Nom du roadbook" aria-label="Nom du roadbook">
     <div class="tools">
@@ -1103,7 +1103,7 @@ body.dragNote .leaflet-tooltip{display:none}
             <button data-act="help">❓ Aide</button>
             <button data-act="manual">📖 Manuel d'utilisation</button>
           </div>
-          <div class="ver">Version v0.261122.1706 · VERSION DE TEST</div>
+          <div class="ver">Version v0.261122.1724 · VERSION DE TEST</div>
         </div>
       </div>
     </div>
@@ -2545,7 +2545,7 @@ const I18N_EN = {
 "Inclure les voies piétonnes et cyclables (footway, cycleway, escaliers)": "Include pedestrian and cycle ways (footway, cycleway, stairs)",
 "Regrouper les notes à moins de (m)": "Merge notes closer than (m)",
 "Ajouter un WPM automatiquement sur les notes qui suivent un passage hors piste": "Automatically add a WPM on notes that follow an off-piste section",
-"Écrire aussi le CAP dans la tulipe exportée (pastille jaune)": "Also write the HEADING in the exported tulip (yellow badge)",
+"Écrire aussi le CAP dans la tulipe (pastille jaune, à l’écran et à l’export)": "Also write the HEADING in the tulip (yellow badge, on screen and in the export)",
 "Noter aussi les intersections où l’on continue tout droit": "Also note junctions where you go straight on",
 "Noter les fourches (Y) dont une branche est d’un autre type (route + chemin)": "Note forks (Y) where one branch is of another type (road + path)",
 "Noter les T et croisements dont les autres branches sont d’un autre type (route + chemin)": "Note T-junctions and crossings whose other branches are of another type (road + path)",
@@ -3841,7 +3841,7 @@ function renderTrack(fit) {
 function noteRadii(n) {
   const out = [];
   if (n.wp && isRadiusWP(n.wp.type)) {
-    const t = n.wp.type, z = (t === 'dz' || t === 'fz') ? WP_DEF.dz : [0, 0];
+    const t = n.wp.type, z = (t === 'dz' || t === 'fz') ? WP_DEF.dz : (WP_DEF[t] || [0, 0]);      // rayons par défaut si non réglés (comme dans le GPX exporté)
     out.push({ t, o: +n.wp.open || z[0] || 0, c: +n.wp.clear || z[1] || 0 });
   }
   if (n.zone) out.push({ t: n.zone.type, o: WP_DEF.dz[0], c: WP_DEF.dz[1] });
@@ -5482,11 +5482,23 @@ function ringCircle(g, seeds) {        // centre et rayon d'un rond-point : tout
     const b1 = (Suuu + Suvv) / 2, b2 = (Svvv + Svuu) / 2, uc = (b1 * Svv - b2 * Suv) / det, vc = (b2 * Suu - b1 * Suv) / det;
     const c = [mx + uc, my + vc], r = Math.sqrt(uc * uc + vc * vc + (Suu + Svv) / N);
     const rms = Math.sqrt(pts.reduce((s, p) => s + (dxy(p, c) - r) ** 2, 0) / N);
-    if (r >= 3 && r <= 80 && rms < 0.2 * r) return { c, r, n: N, ways: seenW.size };
+    if (r >= 3 && r <= 80 && rms < 0.2 * r) return { c, r, n: N, ways: seenW.size, ext: Math.max(...pts.map(p => dxy(p, c))) };
   }
-  return { c: [mx, my], r: null, n: N, ways: seenW.size };
+  return { c: [mx, my], r: null, n: N, ways: seenW.size, ext: Math.max(...pts.map(p => dxy(p, [mx, my]))) };
 }
+let rbAutoR = true;      // rond-point : rayon de la tulipe automatique (désactivé quand l'utilisateur fixe le rayon à la main)
 function roundaboutNote(g, grp, prevS, nextS) {
+  const old = S.settings.tulipR; let Rt = old;
+  if (rbAutoR) {
+    const Js = grp.map(x => x.J), rc = ringCircle(g, Js), pts = Js.map(j => j.xy);
+    const c = rc && rc.c || [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
+    const ext = Math.max(rc && rc.r || 0, rc && rc.ext || 0, ...pts.map(p => dxy(p, c)));      // le plus grand écart entre le centre et le cercle ajusté ou les points d'entrée / sortie
+    if (ext > 0) Rt = clamp(Math.ceil((ext + 24) / 5) * 5, old, 150);
+  }      // l'anneau entier + un peu de route en entrée et en sortie
+  S.settings.tulipR = Rt;
+  try { return roundaboutNote0(g, grp, prevS, nextS); } finally { S.settings.tulipR = old; }
+}
+function roundaboutNote0(g, grp, prevS, nextS) {
   const first = grp[0], last = grp[grp.length - 1], R = S.settings.tulipR;
   let exits = 0;
   for (const x of grp.slice(1, -1)) for (const b of x.brs) {
@@ -6722,7 +6734,8 @@ function rowInner(n, i, par, f, screen) {
   const big = /^(dss|ass)$/.test(t || '') ? `<div class="wpbig">${t.toUpperCase()}</div>` : '';      // DSS / ASS : le sigle en grand au milieu de la 3e case (le symbole de la 1re case n'a plus le mot)
   const tl = /^(dss|dt|ch)$/.test(t || '') && n.wp.limit > 0 ? `<div class="tl">T:${n.wp.limit}</div>` : '';      // temps limite : texte rouge en haut de la 3e case
   const top = dg || tl ? `<div class="k3top">${dg}${tl}</div>` : '';
-  const cap = n.showCap && n.cap != null ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
+  const capT = S.settings.capInTulip !== false && n.showCap && n.cap != null && !n.imgT;      // CAP actif : pastille jaune dans la tulipe (comme dans le GPX exporté)
+  const cap = n.showCap && n.cap != null && !capT ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
   const capOff = screen && !n.showCap && n.cap != null ? `<div class="cap off" title="Clic : afficher le CAP · double clic : mesurer">${Math.round(n.cap) % 360}°</div>` : '';      // CAP inactif (gris) : seulement à l'écran
   // symboles du lexique : on les réduit si besoin pour qu'ils tiennent entre la direction et l'encadré du CAP
   const lk = NV.keys, avail = 33.3 - 1.4 - (signs.length ? 12.4 : cap ? 6.6 : 1.4) - (dg || tl ? 5.7 : 0) - (lines[0] ? 5.6 * (lines[0].length > 13 ? 2 : 1) : 0) - 0.7;
@@ -6732,7 +6745,7 @@ function rowInner(n, i, par, f, screen) {
   while (lk.length && lh > 3.5 && lr * (lh + 0.6) + need > avail) { lh -= 0.5; lr = lexRows(lk, lh, 29.6, 0.6); }
   const lx = lk.length ? `<div class="lx" style="--lh:${lh}cqw">${lk.map(k => `<img src="${FIA_LEX[k].d}" alt="${esc(lexName(k))}" title="${esc(lexTitle(k))}">`).join('')}</div>` : '';
   return `<div class="k k1" style="background:${bg}"><div class="tot">${kmFr(n.s)}</div><div class="bl"><div class="par">${kmFr(par)}</div>${f.close ? ARROW_SVG : ''}</div>${sym}<div class="br"><div class="num">${i + 1}</div></div></div>`
-    + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
+    + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200, undefined, capT ? n.cap : null) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
     + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${n.imgN ? `${big}${top}<img class="pim" src="${n.imgN}" alt="">` : `${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>`}${cap}${capOff}${sg}`
     + (screen && (!n.auto || n.moved) ? '<div class="man">manuelle</div>' : '')
     + (screen ? `<div class="acts">${whyOf(n) ? '<button data-a="why" title="Pourquoi cette note ?">?</button>' : ''}<button data-a="edit" title="Modifier la note">✎</button><button data-a="del" title="Supprimer la note">🗑</button></div>` : '') + `</div>`
@@ -6797,7 +6810,7 @@ async function redrawTulip(n, R) {
     for (let ty = Math.floor(sw[0] / TS); ty <= Math.floor(ne[0] / TS); ty++) for (let tx = Math.floor(sw[1] / TS); tx <= Math.floor(ne[1] / TS); tx++) extraTiles.add(tx + ',' + ty);
   }
   if (!G || G.key !== graphKey()) await fetchOSM(() => {}, () => false);
-  const oldR = S.settings.tulipR; S.settings.tulipR = R;
+  const oldR = S.settings.tulipR; S.settings.tulipR = R; rbAutoR = false;      // rayon choisi à la main : pas de rayon automatique pour les ronds-points
   try {
     let src = n.src, t = null;
     if (!src && n.kind === 'junction') {         // note d'une ancienne version : on retrouve le carrefour le plus proche
@@ -6817,7 +6830,7 @@ async function redrawTulip(n, R) {
       t = trackTulip(sGeo, kind).tulip;
     }
     n.tulip = t;
-  } finally { S.settings.tulipR = oldR; }
+  } finally { S.settings.tulipR = oldR; rbAutoR = true; }
 }
 // symboles importés par l'utilisateur : catégorie « Mes symboles », mémorisés dans le navigateur (bibliothèque) ET dans le fichier projet
 const MYS = {};
@@ -7589,7 +7602,7 @@ ${num('sR', 'Rayon dessiné dans la tulipe (m)', s.tulipR, 25, 120)}
     ${chk('sRoad', 'Afficher les noms de route dans les instructions (nom de la rue ou de la piste, numéro de route : D 976…)', s.showRoad !== false)}
     <label class="chk" style="display:block">Afficher le CAP <select id="sCapMode"><option value="all"${capModeOf(s) === 'all' ? ' selected' : ''}>Sur toutes les notes</option><option value="hp"${capModeOf(s) === 'hp' ? ' selected' : ''}>Uniquement sur les sentiers et hors piste</option><option value="off"${capModeOf(s) === 'off' ? ' selected' : ''}>Jamais</option></select></label>
     ${chk('sWpmHP', 'Ajouter un WPM automatiquement sur les notes qui suivent un passage hors piste', s.wpmHP !== false)}
-    ${chk('sCapT', 'Écrire aussi le CAP dans la tulipe exportée (pastille jaune)', s.capInTulip !== false)}
+    ${chk('sCapT', 'Écrire aussi le CAP dans la tulipe (pastille jaune, à l’écran et à l’export)', s.capInTulip !== false)}
     </details>
     <div class="help" style="margin-top:6px">Les chemins téléchargés sont gardés dans ce navigateur pour aller plus vite (⋯ › « Enregistrer les chemins OSM » pour en faire une copie dans un dossier). <a href="#" id="sClear">Vider cette mémoire</a></div>`, [
     { label: 'Valeurs par défaut', onClick: () => { S.settings = { ...DEF_SETTINGS }; afterSettings(); } }, 'sp',

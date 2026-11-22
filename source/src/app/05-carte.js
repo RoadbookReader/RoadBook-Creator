@@ -206,7 +206,7 @@ function renderTrack(fit) {
 function noteRadii(n) {
   const out = [];
   if (n.wp && isRadiusWP(n.wp.type)) {
-    const t = n.wp.type, z = (t === 'dz' || t === 'fz') ? WP_DEF.dz : [0, 0];
+    const t = n.wp.type, z = (t === 'dz' || t === 'fz') ? WP_DEF.dz : (WP_DEF[t] || [0, 0]);      // rayons par défaut si non réglés (comme dans le GPX exporté)
     out.push({ t, o: +n.wp.open || z[0] || 0, c: +n.wp.clear || z[1] || 0 });
   }
   if (n.zone) out.push({ t: n.zone.type, o: WP_DEF.dz[0], c: WP_DEF.dz[1] });

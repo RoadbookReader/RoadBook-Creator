@@ -149,11 +149,23 @@ function ringCircle(g, seeds) {        // centre et rayon d'un rond-point : tout
     const b1 = (Suuu + Suvv) / 2, b2 = (Svvv + Svuu) / 2, uc = (b1 * Svv - b2 * Suv) / det, vc = (b2 * Suu - b1 * Suv) / det;
     const c = [mx + uc, my + vc], r = Math.sqrt(uc * uc + vc * vc + (Suu + Svv) / N);
     const rms = Math.sqrt(pts.reduce((s, p) => s + (dxy(p, c) - r) ** 2, 0) / N);
-    if (r >= 3 && r <= 80 && rms < 0.2 * r) return { c, r, n: N, ways: seenW.size };
+    if (r >= 3 && r <= 80 && rms < 0.2 * r) return { c, r, n: N, ways: seenW.size, ext: Math.max(...pts.map(p => dxy(p, c))) };
   }
-  return { c: [mx, my], r: null, n: N, ways: seenW.size };
+  return { c: [mx, my], r: null, n: N, ways: seenW.size, ext: Math.max(...pts.map(p => dxy(p, [mx, my]))) };
 }
+let rbAutoR = true;      // rond-point : rayon de la tulipe automatique (désactivé quand l'utilisateur fixe le rayon à la main)
 function roundaboutNote(g, grp, prevS, nextS) {
+  const old = S.settings.tulipR; let Rt = old;
+  if (rbAutoR) {
+    const Js = grp.map(x => x.J), rc = ringCircle(g, Js), pts = Js.map(j => j.xy);
+    const c = rc && rc.c || [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
+    const ext = Math.max(rc && rc.r || 0, rc && rc.ext || 0, ...pts.map(p => dxy(p, c)));      // le plus grand écart entre le centre et le cercle ajusté ou les points d'entrée / sortie
+    if (ext > 0) Rt = clamp(Math.ceil((ext + 24) / 5) * 5, old, 150);
+  }      // l'anneau entier + un peu de route en entrée et en sortie
+  S.settings.tulipR = Rt;
+  try { return roundaboutNote0(g, grp, prevS, nextS); } finally { S.settings.tulipR = old; }
+}
+function roundaboutNote0(g, grp, prevS, nextS) {
   const first = grp[0], last = grp[grp.length - 1], R = S.settings.tulipR;
   let exits = 0;
   for (const x of grp.slice(1, -1)) for (const b of x.brs) {

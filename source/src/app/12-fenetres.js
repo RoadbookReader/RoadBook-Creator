@@ -103,7 +103,7 @@ ${num('sR', 'Rayon dessiné dans la tulipe (m)', s.tulipR, 25, 120)}
     ${chk('sRoad', 'Afficher les noms de route dans les instructions (nom de la rue ou de la piste, numéro de route : D 976…)', s.showRoad !== false)}
     <label class="chk" style="display:block">Afficher le CAP <select id="sCapMode"><option value="all"${capModeOf(s) === 'all' ? ' selected' : ''}>Sur toutes les notes</option><option value="hp"${capModeOf(s) === 'hp' ? ' selected' : ''}>Uniquement sur les sentiers et hors piste</option><option value="off"${capModeOf(s) === 'off' ? ' selected' : ''}>Jamais</option></select></label>
     ${chk('sWpmHP', 'Ajouter un WPM automatiquement sur les notes qui suivent un passage hors piste', s.wpmHP !== false)}
-    ${chk('sCapT', 'Écrire aussi le CAP dans la tulipe exportée (pastille jaune)', s.capInTulip !== false)}
+    ${chk('sCapT', 'Écrire aussi le CAP dans la tulipe (pastille jaune, à l’écran et à l’export)', s.capInTulip !== false)}
     </details>
     <div class="help" style="margin-top:6px">Les chemins téléchargés sont gardés dans ce navigateur pour aller plus vite (⋯ › « Enregistrer les chemins OSM » pour en faire une copie dans un dossier). <a href="#" id="sClear">Vider cette mémoire</a></div>`, [
     { label: 'Valeurs par défaut', onClick: () => { S.settings = { ...DEF_SETTINGS }; afterSettings(); } }, 'sp',
