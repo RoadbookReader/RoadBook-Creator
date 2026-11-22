@@ -610,8 +610,7 @@ function rowInner(n, i, par, f, screen) {
   const tl = /^(dss|dt|ch)$/.test(t || '') && n.wp.limit > 0 ? `<div class="tl">T:${n.wp.limit}</div>` : '';      // temps limite : texte rouge en haut de la 3e case
   const top = dg || tl ? `<div class="k3top">${dg}${tl}</div>` : '';
   const capT = S.settings.capInTulip !== false && n.showCap && n.cap != null && !n.imgT;      // CAP actif : pastille jaune dans la tulipe (comme dans le GPX exporté)
-  const cap = n.showCap && n.cap != null && !capT ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
-  const capOn = screen && capT ? `<div class="cap on" title="Clic : masquer le CAP · double clic : mesurer">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif écrit dans la tulipe : la case reste en 3e case (à l'écran seulement) pour pouvoir le masquer ou le mesurer
+  const cap = n.showCap && n.cap != null ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
   const capOff = screen && !n.showCap && n.cap != null ? `<div class="cap off" title="Clic : afficher le CAP · double clic : mesurer">${Math.round(n.cap) % 360}°</div>` : '';      // CAP inactif (gris) : seulement à l'écran
   // symboles du lexique : on les réduit si besoin pour qu'ils tiennent entre la direction et l'encadré du CAP
   const lk = NV.keys, avail = 33.3 - 1.4 - (signs.length ? 12.4 : cap ? 6.6 : 1.4) - (dg || tl ? 5.7 : 0) - (lines[0] ? 5.6 * (lines[0].length > 13 ? 2 : 1) : 0) - 0.7;
@@ -622,7 +621,7 @@ function rowInner(n, i, par, f, screen) {
   const lx = lk.length ? `<div class="lx" style="--lh:${lh}cqw">${lk.map(k => `<img src="${FIA_LEX[k].d}" alt="${esc(lexName(k))}" title="${esc(lexTitle(k))}">`).join('')}</div>` : '';
   return `<div class="k k1" style="background:${bg}"><div class="tot">${kmFr(n.s)}</div><div class="bl"><div class="par">${kmFr(par)}</div>${f.close ? ARROW_SVG : ''}</div>${sym}<div class="br"><div class="num">${i + 1}</div></div></div>`
     + `<div class="k k2">${n.imgT ? `<img class="pim" src="${n.imgT}" alt="">` : tulipSVG(n.tulip, 200, undefined, capT ? n.cap : null) + freeLayer(n.sym, 't')}${t === 'cp' ? '<div class="cpf"></div>' : ''}</div>`
-    + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${n.imgN ? `${big}${top}<img class="pim" src="${n.imgN}" alt="">` : `${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>`}${cap}${capOff}${capOn}${sg}`
+    + `<div class="k k3${signs.length ? ' hs' : cap ? ' hc' : ''}">${n.imgN ? `${big}${top}<img class="pim" src="${n.imgN}" alt="">` : `${big}${top}${n.kind === 'info' ? lx : ''}<div class="t1"${tst(n, 800)}>${esc(lines[0] || '')}</div>${n.kind === 'info' ? '' : lx}${freeLayer((n.sym || []).concat(mainFree), 'd')}<div class="t2"${tst(n, 400)}>${esc(fitLines(lines, !!(dg || tl), !!(cap || signs.length), lk.length ? lr * (lh + 0.6) - 0.6 : 0, signs.length ? 12.4 : 0).join('\n'))}</div>`}${cap}${capOff}${sg}`
     + (screen && (!n.auto || n.moved) ? '<div class="man">manuelle</div>' : '')
     + (screen ? `<div class="acts">${whyOf(n) ? '<button data-a="why" title="Pourquoi cette note ?">?</button>' : ''}<button data-a="edit" title="Modifier la note">✎</button><button data-a="del" title="Supprimer la note">🗑</button></div>` : '') + `</div>`
     + (f.zone ? `<div class="fr zone${f.zTop ? ' zt' : ''}${f.zBot ? ' zb' : ''}"></div>` : '') + (f.red ? '<div class="fr red"></div>' : '');
