@@ -369,7 +369,8 @@ function notesSVG(n) {
     if (y + 44 > H - 8) break outer;
     y += 44; s += `<text x="16" y="${y}" font-family="${FF}" font-size="40"${n.tbold === 'on' ? ' font-weight="700"' : ''} fill="${n.tcol || '#000'}">${esc(l)}</text>`;
   }
-  if (n.wp && /^(dss|dt|ch)$/.test(n.wp.type) && n.wp.limit > 0) s += `<text x="${W - 14}" y="40" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="42" fill="#E00000">T:${n.wp.limit}</text>`;      // temps limite en rouge (le lecteur ne le connaît pas)
+  if (n.wp && /^(dss|dt|ch)$/.test(n.wp.type) && n.wp.limit > 0) s += `<text x="${W - 14}" y="40" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="42" fill="#E00000">T:${n.wp.limit}</text>`;
+  else if (n.wp && n.wp.type === 'dn' && n.wp.dur > 0) s += `<text x="${W - 14}" y="40" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="42" fill="#E00000">N:${n.wp.dur}</text>`;      // durée de neutralisation (minutes)      // temps limite en rouge (le lecteur ne le connaît pas)
   return s + freeSyms((n.sym || []).concat(n.tpos && NV.lines.some(Boolean) ? [{ ...n.tpos, tx: NV.lines.join('\n'), main: 1, c: 'd', col: n.tcol, bd: n.tbold }] : []), 'd', W, H) + '</svg>';
 }
 const WP_TYPES = [
@@ -607,7 +608,7 @@ function rowInner(n, i, par, f, screen) {
   const sg = signs.length ? `<div class="sg" style="--h:${signs.length > 1 ? 8 : 10.5}cqw">${signs.join('')}</div>` : '';
   const dg = n.danger && t !== 'wps' ? `<div class="dg">${'!'.repeat(n.danger)}</div>` : '';
   const big = /^(dss|ass)$/.test(t || '') ? `<div class="wpbig">${t.toUpperCase()}</div>` : '';      // DSS / ASS : le sigle en grand au milieu de la 3e case (le symbole de la 1re case n'a plus le mot)
-  const tl = /^(dss|dt|ch)$/.test(t || '') && n.wp.limit > 0 ? `<div class="tl">T:${n.wp.limit}</div>` : '';      // temps limite : texte rouge en haut de la 3e case
+  const tl = /^(dss|dt|ch)$/.test(t || '') && n.wp.limit > 0 ? `<div class="tl">T:${n.wp.limit}</div>` : t === 'dn' && n.wp.dur > 0 ? `<div class="tl">N:${n.wp.dur}</div>` : '';      // temps limite : texte rouge en haut de la 3e case
   const top = dg || tl ? `<div class="k3top">${dg}${tl}</div>` : '';
   const capT = S.settings.capInTulip !== false && n.showCap && n.cap != null && !n.imgT;      // CAP actif : pastille jaune dans la tulipe (comme dans le GPX exporté)
   const cap = n.showCap && n.cap != null ? `<div class="cap">${Math.round(n.cap) % 360}°</div>` : '';      // CAP actif (jaune) : exporté et imprimé
