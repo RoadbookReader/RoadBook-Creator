@@ -40,6 +40,35 @@ function regXml(p) {                                             // bloc GPX ; p
   o.push('      </rbgen:rules>');
   return o.join('\n');
 }
+function regExport(st) {                                         // tous les profils personnels (le profil FIM préréglé est fourni par le générateur)
+  if (!st.list.length) return toast('Aucun règlement à exporter.', 'err');
+  const d = new Date(), z = x => String(x).padStart(2, '0');
+  download('reglements-particuliers-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.json', JSON.stringify({ app: 'rbgen-reg', v: 1, list: st.list }), 'application/json');
+  toast(st.list.length + ' règlement(s) exporté(s).', 'ok');
+}
+function regImport(file, st, done) {
+  const r = new FileReader();
+  r.onload = () => {
+    let o = null; try { o = JSON.parse(r.result); } catch (_) { }
+    if (!o || o.app !== 'rbgen-reg' || !Array.isArray(o.list)) return toast('Ce fichier n’est pas un fichier de règlements particuliers du générateur.', 'err');
+    const inc = o.list.filter(x => x && typeof x === 'object' && typeof x.name === 'string' && x.rows && typeof x.rows === 'object' && !x.builtin);
+    if (!inc.length) return toast('Aucun règlement dans ce fichier.', 'err');
+    const same = inc.filter(x => st.list.some(y => y.name === x.name));
+    let over = false;
+    if (same.length) over = confirm(same.length + ' règlement(s) du fichier existent déjà (même nom) :\n' + same.map(x => '• ' + x.name).join('\n') + '\n\nOK = les écraser par ceux du fichier\nAnnuler = les laisser tels quels (seuls les nouveaux sont importés)');
+    let n = 0, last = null;
+    for (const x of inc) {
+      const i = st.list.findIndex(y => y.name === x.name);
+      const c = JSON.parse(JSON.stringify(x)); c.sp = c.sp || { m: 'none', k: 1 };
+      if (i >= 0) { if (!over) continue; c.id = st.list[i].id; st.list[i] = c; }
+      else { c.id = 'p' + Date.now().toString(36) + n; st.list.push(c); }
+      last = c.id; n++;
+    }
+    if (!n) return toast('Rien d’importé : tous les règlements existent déjà.', 'ok');
+    toast(n + ' règlement(s) importé(s).', 'ok'); done(last);
+  };
+  r.readAsText(file);
+}
 function regDialog() {
   const st = regLoad(); let cur = st.sel;
   const cp = () => regAll(st).find(p => p.id === cur) || REG_FIM;
@@ -61,7 +90,7 @@ function regDialog() {
 <div class="rgsp"><b>Pénalité de distance</b><br><label><input type="checkbox" data-k="dson"${p.dist && p.dist.on ? ' checked' : ''}> Compter une pénalité de distance</label>${p.dist && p.dist.on ? `<div style="margin-top:4px"><input data-k="dx" size="4" value="${p.dist.x}"> points pour <input data-k="dy" size="5" value="${p.dist.y}"> m</div><div style="margin-top:4px">Distance comptée : <select data-k="dsc"><option value="all"${p.dist.scope !== 'special' ? ' selected' : ''}>Tout le roadbook</option><option value="special"${p.dist.scope === 'special' ? ' selected' : ''}>Seulement les spéciales (DSS → ASS)</option></select></div><div style="color:#6b6558;font-size:12px;margin-top:3px">Par tranche entamée : "X" points chaque fois que "Y" mètres sont commencés. En résultat « Temps », les points sont convertis avec la conversion du profil.</div>` : ''}</div>
 <div style="color:#8a8478;margin-top:6px;font-size:12px">Un type sans ligne renseignée ne donne aucune pénalité.</div>`;
     }
-    return `<div style="display:flex;gap:12px;flex-wrap:wrap"><div style="width:190px;flex:none"><div class="rgl">${list}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="mbtn sm" data-a="new">＋ Nouveau</button><button class="mbtn sm" data-a="dup">Dupliquer</button>${ro ? '' : '<button class="mbtn danger sm" data-a="del">Supprimer</button>'}</div></div><div style="flex:1;min-width:260px">${ed}</div></div>
+    return `<div style="display:flex;gap:12px;flex-wrap:wrap"><div style="width:190px;flex:none"><div class="rgl">${list}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="mbtn sm" data-a="new">＋ Nouveau</button><button class="mbtn sm" data-a="dup">Dupliquer</button>${ro ? '' : '<button class="mbtn danger sm" data-a="del">Supprimer</button>'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="mbtn sm" data-a="exp">📤 Exporter</button><button class="mbtn sm" data-a="imp">📥 Importer</button></div><input type="file" id="rgFile" accept=".json,application/json" style="display:none"></div><div style="flex:1;min-width:260px">${ed}</div></div>
 <style>.rgit{padding:7px 9px;border:1px solid #bdb5a5;border-radius:6px;margin-bottom:4px;cursor:pointer}.rgit.on{background:var(--sand);font-weight:700}.rgit small{color:#8a8478}.rgt{width:100%;border-collapse:collapse;font-size:13px}.rgt th{text-align:left;color:#8a8478;font-weight:600}.rgt td{border-top:1px solid #ddd5c5;padding:3px 4px}.rgt select,.rgt input{font:inherit;padding:3px}.rgsp{margin-top:10px;padding:8px 10px;border:1px solid #bdb5a5;border-radius:6px}</style>`;
   };
   const m = openModal('Règlements particuliers', '<div id="rgB"></div>', [{ label: 'Fermer', cls: 'primary' }], { noEsc: false });
@@ -78,12 +107,15 @@ function regDialog() {
     const it = e.target.closest('.rgit'); if (it) { cur = it.dataset.id; commit(); draw(); return; }
     const a = e.target.closest('[data-a]'); if (!a) return;
     const p = cp();
+    if (a.dataset.a === 'exp') { regExport(st); return; }
+    if (a.dataset.a === 'imp') { B.querySelector('#rgFile').click(); return; }
     if (a.dataset.a === 'new') { const n = { id: newId(), name: 'Nouveau règlement', desc: '', res: 'pts', k: 2, sp: { m: 'none', k: 1 }, spd: 'none', rows: {} }; st.list.push(n); cur = n.id; }
     else if (a.dataset.a === 'dup') { const n = JSON.parse(JSON.stringify(p.builtin ? { ...p, builtin: false, rows: regFromFim() } : p)); n.id = newId(); n.name = (p.name + ' (copie)').slice(0, 60); delete n.builtin; st.list.push(n); cur = n.id; }
     else if (a.dataset.a === 'del') { if (!confirm('Supprimer ce profil ?')) return; st.list = st.list.filter(x => x.id !== p.id); cur = st.list.length ? st.list[0].id : 'fim'; }
     commit(); draw();
   });
   B.addEventListener('change', e => {
+    if (e.target.id === 'rgFile') { const f = e.target.files[0]; if (f) regImport(f, st, id => { cur = id; commit(); draw(); }); e.target.value = ''; return; }
     const el = e.target, k = el.dataset.k; if (!k) return;
     const p = cp(); if (p.builtin) return;
     const tr = el.closest('tr[data-t]');
