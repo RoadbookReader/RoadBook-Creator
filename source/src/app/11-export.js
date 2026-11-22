@@ -58,7 +58,7 @@ async function buildGPX(onProg, mode, opts) {
     const n = S.notes[i];
     onProg && onProg(i, S.notes.length);
     if (light && !(n.wp || n.zone || n.fuel)) continue;
-    const tul = light ? '' : n.imgT || await svgToPNG(tulipSVG(n.tulip, 300, n.sym), 300, 300);      // image importée (autre logiciel) : réécrite telle quelle
+    const tul = light ? '' : n.imgT || await svgToPNG(tulipSVG(n.tulip, 300, n.sym, S.settings.capInTulip !== false && n.showCap && n.cap != null ? n.cap : null), 300, 300);      // image importée (autre logiciel) : réécrite telle quelle
     const nts = light ? '' : n.imgN || await svgToPNG(notesSVG(n), 400, 300);
     const ex = [];
     ex.push(`<openrally:distance>${km(n.s)}</openrally:distance>`);

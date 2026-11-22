@@ -192,7 +192,7 @@ function resetMark(t, sc, oth) {
   const e = tip(v);
   return `<path d="M${f1(c[0])} ${f1(c[1])}L${f1(e[0])} ${f1(e[1])}" stroke="#000" stroke-width="1.7" fill="none" stroke-linecap="round"/><circle cx="${f1(e[0])}" cy="${f1(e[1])}" r="2.5" fill="#000"/>`;
 }
-function tulipSVG(t, size, syms) {
+function tulipSVG(t, size, syms, capBake) {
   size = size || 100;
   let s = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="${size}" height="${size}"><rect width="100" height="100" fill="#fff"/>`;
   if (!t) return s + '</svg>';
@@ -249,10 +249,43 @@ function tulipSVG(t, size, syms) {
     }
     oth = out;
   }
+  // chemins non empruntés : tronqués à un rayon fixe autour de la note, avec un petit trait perpendiculaire à leur bout (« ça continue, mais pas par là »)
+  const TRN = 31, ticks = [], rpl = (t.route || []).length >= 2 ? t.route.map(q => sc(q.p)) : null;
+  const dRoute = p => { if (!rpl) return Infinity; let d = Infinity; for (let i = 0; i + 1 < rpl.length; i++) d = Math.min(d, segProj(p, rpl[i], rpl[i + 1]).d); return d; };
+  {
+    const res = [];
+    for (const o of oth) {
+      const pts = o.p; let run = [], cutStart = false;
+      const flush = (cutEnd, endTrue) => {
+        if (run.length > 1 && polyLen(run) >= 3) {
+          res.push({ c: o.c, p: run });
+          for (const [e, q, cut, real] of [[run[0], run[1], cutStart, !cutStart && run[0] === pts[0]], [run[run.length - 1], run[run.length - 2], cutEnd, endTrue]]) {
+            if (!(cut || real) || dRoute(e) < 4.5) continue;
+            const L = Math.hypot(e[0] - q[0], e[1] - q[1]) || 1, ux = (e[0] - q[0]) / L, uy = (e[1] - q[1]) / L;
+            ticks.push([e[0] - uy * 4, e[1] + ux * 4, e[0] + uy * 4, e[1] - ux * 4, o.c]);
+          }
+        }
+        run = []; cutStart = false;
+      };
+      let prevIn = false;
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i], b = pts[i + 1], n = b ? Math.max(1, Math.ceil(dxy(a, b) / 0.5)) : 1;
+        for (let k = 0; k < n; k++) {
+          const m = k ? lerp(a, b, k / n) : a, inside = Math.hypot(m[0] - cx, m[1] - cy) <= TRN;
+          if (inside) { if (!prevIn) { cutStart = run.length === 0 && !(i === 0 && k === 0); } run.push(m); }
+          else if (prevIn) flush(true, false);
+          prevIn = inside;
+        }
+      }
+      if (prevIn) { run.push(pts[pts.length - 1]); flush(false, true); } else flush(false, false);
+    }
+    oth = res;
+  }
   for (const o of oth) if (o.c === 'road') s += ln(o.p, 'stroke="#000" stroke-width="6.4"');
   for (const o of oth) if (o.c === 'road') s += ln(o.p, 'stroke="#fff" stroke-width="2.8" stroke-linecap="round"');
   for (const o of oth) if (o.c === 'track') s += ln(o.p, 'stroke="#000" stroke-width="2.6" stroke-linecap="round"');
   for (const o of oth) if (o.c === 'trail') s += ln(o.p, 'stroke="#000" stroke-width="2.4" stroke-dasharray="4.5 3.2"');
+  for (const k of ticks) s += `<path d="M${f1(k[0])} ${f1(k[1])}L${f1(k[2])} ${f1(k[3])}" stroke="#000" stroke-width="${k[4] === 'road' ? 3 : 2.6}" stroke-linecap="butt"/>`;
   let rt = (t.route || []).map(q => ({ p: sc(q.p), c: q.c }));
   if (rt.length >= 2) {
     const isEnd = t.kind === 'end';
@@ -272,8 +305,6 @@ function tulipSVG(t, size, syms) {
     for (const r of runs) if (r.c === 'road') s += ln(r.p, 'stroke="#fff" stroke-width="1.7"');
     for (const r of runs) if (r.c === 'track') s += ln(r.p, `stroke="${ROUTE_C}" stroke-width="4.8"`);
     for (const r of runs) if (r.c === 'trail') s += ln(r.p, `stroke="${ROUTE_C}" stroke-width="4.6" stroke-dasharray="4.6 3.8"`);
-    const st = rt[0].p;
-    s += `<circle cx="${f1(st[0])}" cy="${f1(st[1])}" r="4.6" fill="${ROUTE_C}"/>`;
     const ux = dir[0], uy = dir[1];
     if (!isEnd) {
       const AL = 12, W = 8, bx = end[0] - ux * AL, by = end[1] - uy * AL;
@@ -289,7 +320,18 @@ function tulipSVG(t, size, syms) {
     }
   }
   s += resetMark(t, sc, oth);
+  if (capBake != null && isFinite(capBake)) s += capBadge(Math.round(capBake) % 360, [].concat(oth.map(o => o.p), (t.route || []).length ? [t.route.map(q => sc(q.p))] : [], ticks.map(k => [[k[0], k[1]], [k[2], k[3]]])));
   return s + freeSyms(syms, 't', 100, 100) + '</svg>';
+}
+// CAP dessiné dans la tulipe : pastille jaune (chiffre + « C »), posée dans le coin le moins chargé de l'image
+function capBadge(deg, polys) {
+  const W = 30, H = 15, CW = 10, CH = 9, cands = [[2, 2], [68, 2], [2, 100 - 2 - H - CH], [68, 100 - 2 - H - CH]];
+  const pts = []; for (const p of polys) for (let i = 0; i < p.length; i++) { pts.push(p[i]); if (p[i + 1]) { const n = Math.ceil(dxy(p[i], p[i + 1]) / 2); for (let k = 1; k < n; k++) pts.push(lerp(p[i], p[i + 1], k / n)); } }
+  const cost = ([x, y]) => pts.reduce((c, p) => c + (p[0] > x - 3 && p[0] < x + W + 3 && p[1] > y - 3 && p[1] < y + H + CH + 3 ? 1 : 0), 0);
+  let best = cands[0], bc = Infinity; for (const c of cands) { const k = cost(c); if (k < bc) { bc = k; best = c; } }
+  const [x, y] = best, FF = 'Arial, Helvetica, sans-serif';
+  return `<rect x="${x}" y="${y}" width="${W}" height="${H}" fill="#fff200"/><text x="${x + W / 2}" y="${y + 12}" text-anchor="middle" font-family="${FF}" font-weight="700" font-size="14" fill="#000">${deg}</text>`
+    + `<rect x="${x}" y="${y + H}" width="${CW}" height="${CH}" fill="#fff200"/><text x="${x + CW / 2}" y="${y + H + 7.5}" text-anchor="middle" font-family="${FF}" font-weight="700" font-size="8" fill="#000">C</text>`;
 }
 function wrapText(str, n) {
   const words = String(str).split(/\s+/).filter(Boolean), out = []; let cur = '';
@@ -775,6 +817,7 @@ function editNote(id, isNew) {
       n.danger = +$('#eDanger').value;
       const d = parseFloat($('#eDist').value); if (isFinite(d) && T) n.s = clamp(Math.round(d * 1000 * 10) / 10, 0, T.L);
       const t = $('#eWp').value;
+      delete n.wpAuto;
       if (!t) n.wp = null;
       else {
         n.wp = { type: t, name: $('#eName').value.trim() };

@@ -19,7 +19,7 @@ async function generate() {
     const w = mm.querySelector('#gsW'); if (w) w.style.display = location.protocol === 'file:' && (a === 'osm' || b === 'osm') ? '' : 'none'; };
   mm.querySelector('#gsT').onchange = mm.querySelector('#gsN').onchange = hint; hint();
 }
-const keepOnRegen = n => !n.auto || n.moved || n.edited || n.wp || n.zone || n.fuel || (n.sym && n.sym.length) || (n.lex && n.lex.length) || n.tpos || n.tulipEdited || n.symLocked;
+const keepOnRegen = n => !n.auto || n.moved || n.edited || (n.wp && !n.wpAuto) || n.zone || n.fuel || (n.sym && n.sym.length) || (n.lex && n.lex.length) || n.tpos || n.tulipEdited || n.symLocked;
 let GENLOG = [];
 const WEBAPP_URL = 'https://roadbookreader.github.io/RoadBook-Creator/';
 let rptLayer = null;
@@ -84,10 +84,25 @@ async function genPipeline(prog, isCancelled) {      // calcul complet des notes
     addTrackNames(all);
     let fr = null;
     if (S.settings.followLvl !== 0 && !(S.settings.followLvl === undefined && S.settings.followRoad === false)) { fr = followRoad(all); all.length = 0; all.push(...fr.notes); }
+    const GN = G;      // réseau des instructions (sert aux WPM hors piste)
     G = G0;      // le réseau des tulipes reste celui du roadbook (retouche des tulipes)
-    S.notes = [...all, ...manual]; applyNoteLang();
+    S.notes = [...all, ...manual]; autoWpmHP(S.notes, GN); applyNoteLang();
     S.stale = false; S.sel = null;
     return { mm, ratio, jn, bends, rep, fr, manual, all };
+}
+/* WPM automatiques en hors piste (comme Seekers) : un WPM est posé sur chaque note dont le tronçon qui la précède est hors piste, c'est-à-dire sans chemin dans les données
+   d'instructions (OpenStreetMap) ; la 1re note d'un hors-piste n'en reçoit pas, les suivantes oui tant que ça dure. Réglage « wpmHP ». */
+function autoWpmHP(notes, net) {
+  for (const n of notes) if (n.wpAuto) { n.wp = null; delete n.wpAuto; }
+  if (S.settings.wpmHP === false || !net || !net.ways || !net.ways.length || !T) return 0;
+  const a = [...notes].sort((x, y) => x.s - y.s), STEP = 10; let c = 0;
+  const offShare = (s0, s1) => { let off = 0, n = 0; for (let s = s0 + STEP / 2; s < s1; s += STEP) { n++; if (!nearestWaySeg(net, pointAt(s), 18)) off++; } return n ? off / n : 0; };
+  for (let i = 1; i < a.length; i++) {
+    const n = a[i];
+    if (n.wp || n.zone || n.fuel || n.kind === 'start' || n.kind === 'info' || n.s - a[i - 1].s < 30) continue;
+    if (offShare(a[i - 1].s, n.s) >= 0.5) { n.wp = { type: 'wpm', name: '' }; n.wpAuto = true; c++; }
+  }
+  return c;
 }
 async function runGenerate() {
   cancelGen = false; GENLOG = [];
